@@ -15,11 +15,17 @@ main( )
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
+<<<<<<< HEAD
 	int   n,get;
 	int rcvLen;
 	char rcvBuffer[100];
 	char *token1,*token2;
 	char l[100];
+=======
+	int   n;
+	int rcvLen;
+	char rcvBuffer[100];
+>>>>>>> 15fd768f36555fd4b86914a5c5cce97bf1636bdb
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -46,6 +52,7 @@ main( )
 		while(1){
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
+<<<<<<< HEAD
 			
 			printf("[%s] received\n", rcvBuffer);
 		if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
@@ -80,6 +87,39 @@ main( )
 		}
 		close(c_socket);
 		if(!strncasecmp(rcvBuffer, "kill server", 11))
+=======
+			printf("[%s] received\n", rcvBuffer);
+			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
+				break;
+			if(strncasecmp(rcvBuffer, "안녕하세요",5) == 0){
+				printf("안녕하세요, 나도 만나서 반가워요.\n");
+			}
+			if(strncasecmp(rcvBuffer, "이름이 뭐야?",7)==0){
+			  printf("내 이름은 AAA야\n");
+			}
+			if(strncasecmp(rcvBuffer, "몇 살이야?",6)==0){
+				printf("나는 50살이야\n");
+			}
+		  if(strncasecmp(rcvBuffer, "strlen",6)==0){
+				printf("길이는 %d\n",strlen(rcvBuffer)-7);			
+			}
+		  if(strncasecmp(rcvBuffer,"strcmp",6)==0){
+				
+				char*token;
+				token = strtok(rcvBuffer,"");
+				while(token != NULL){
+					token = strtok(NULL,"");
+				}
+	
+			}
+				
+		}
+			n = strlen(buffer);
+			write(c_socket, buffer, n);
+			}
+			close(c_socket);
+			if(!strncasecmp(rcvBuffer, "kill server", 11))
+>>>>>>> 15fd768f36555fd4b86914a5c5cce97bf1636bdb
 			break;
 	}	
 	close(s_socket);
