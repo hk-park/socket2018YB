@@ -16,7 +16,7 @@ main( )
 	int   len;
 	int   n;
 	int rcvLen;
-	char rcvBuffer[100], rcv[100], *tok;
+	char rcvBuffer[100], rcv[100], *tok, *tok2;
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -64,13 +64,23 @@ main( )
 				n = strlen(rcv);
 				write(c_socket, rcv, n);
 			}
-			else if(strncasecmp(rcvBuffer, "strlen ", 6) == 0){
+			else if(strncasecmp(rcvBuffer, "strlen ", 7) == 0){
 				strtok(rcvBuffer, " ");
-				printf("%s", tok);
 				tok = strtok(NULL, " ");
+				sprintf(rcv, "%d\n", strlen(tok));
+				n = strlen(rcv);
+				write(c_socket, rcv, n);
 			}
-			else if(strcmp(rcvBuffer, "이름이 뭐야?") == 0){
-				strcpy(rcv, "내이름은 전진수야.");
+			else if(strncasecmp(rcvBuffer, "strcmp ", 7) == 0){
+				strtok(rcvBuffer, " ");
+				tok = strtok(NULL, " ");
+				tok2 = strtok(NULL, " ");
+				if(!strcmp(tok, tok2)){
+					sprintf(rcv, "%d\n", strcmp(tok, tok2));
+				}
+				else{
+					strcpy(rcv, "두개의 값이 틀립니다!");
+				}
 				n = strlen(rcv);
 				write(c_socket, rcv, n);
 			}
