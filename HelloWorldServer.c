@@ -45,9 +45,10 @@ main( )
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
 
-			if(strcmp(rcvBuffer, "안녕하세요") == 0 )
-		{	printf("안녕하세요 챗봇입니다");
-				break;
+		if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
+		{
+			break;
+				
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
 		}
