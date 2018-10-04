@@ -24,9 +24,10 @@ int main(){
 		close(c_socket);
 		return -1;
 	}
-	//strcpy(buffer, "만일 내게 물어보면 나는 클라이언트\n");
+	printf("[INFO] Successfully connected to server\n");
 	while(1){
 	buffer[0] = '\0';
+	printf("[SEND] : ");
 	fgets(buffer, sizeof(buffer), stdin);
 	n = write(c_socket, buffer, strlen(buffer));
 	
@@ -34,7 +35,6 @@ int main(){
 		break;
 	if(!strcmp(buffer,"kill server\n"))
 		break;
-
 
 	if(n < 0){
 		printf("[ERR] Cannot write\n");
@@ -47,16 +47,12 @@ int main(){
 		printf("[ERR] Cannot read\n");
 		return -1;
 	}
-
 	rcvBuffer[n] = '\0';
 
-
-	printf("서버로부터 받은 문자열: %s", rcvBuffer);
-	printf("서버로부터 받은 문자열의 길이: %d\n", strlen(rcvBuffer));
+	printf("[INFO] 서버로부터 받은 문자열 : %s", rcvBuffer);
+	printf("[INFO] 서버로부터 받은 문자열의 길이: %d\n", strlen(rcvBuffer));
 
 	}
-
-	
 	close(c_socket);
 	return 0;
 
