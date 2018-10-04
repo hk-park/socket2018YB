@@ -15,7 +15,7 @@ main( )
 	int   len;
 	int   n, i;
 	int rcvLen;
-	char rcvBuffer[100];
+	char rcvBuffer[100],  strcmp1[100], strcmp2[100];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -59,7 +59,7 @@ main( )
 			else if(strncasecmp(rcvBuffer, "strcmp ", 7)){
 				n = strlen(rcvbuffer);				
 				for(i=7;i<n;i++){
-					if(rcvbuffer[i]
+					if(rcvbuffer[i] = ' ')
 			}
 		}
 		close(c_socket);
