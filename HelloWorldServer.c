@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <malloc.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
@@ -9,7 +10,7 @@
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
 char buffer[100] = "Hi, I'm server\n";
- 
+char server_msg_buffer[100];
 main( )
 {
 	int   c_socket, s_socket;
@@ -17,6 +18,7 @@ main( )
 	int   len;
 	int   n;
 	int rcvLen;
+	char *send_buffer = (char*)malloc(sizeof(char)*100);
 	char rcvBuffer[100];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
@@ -47,6 +49,37 @@ main( )
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
+			else if(strcmp(rcvBuffer,"안녕하세요") == 0){
+				strcpy(server_msg_buffer ,"안녕하세요. 만나서 반가워요.");
+				write(c_socket,server_msg_buffer,strlen(server_msg_buffer));
+			}
+			else if(strcmp(rcvBuffer,"이름이 뭐야?") == 0){
+				strcpy(server_msg_buffer, "내 이름은 이선룡이야");
+				write(c_socket, server_msg_buffer, strlen(server_msg_buffer));
+			}
+			else if(strcmp(rcvBuffer,"몇살이야?") == 0){
+				strcpy(server_msg_buffer, "나는 24살이야");
+				write(c_socket, server_msg_buffer, strlen(server_msg_buffer));
+			}
+			else if(strncasecmp(rcvBuffer, "strlen ", 7) == 0){
+				int client_msg_len = 0;
+				char *pStrtok = strtok(rcvBuffer, " ");
+				while(pStrtok != NULL){
+					client_msg_len += strlen(pStrtok) + 1;
+					pStrtok = strtok(NULL, " ");
+				}
+				client_msg_len -= 8;
+				sprintf(send_buffer, "%d\n", client_msg_len);
+				write(c_socket, send_buffer, strlen(send_buffer));	
+			}
+			else if(strncasecmp(rcvBuffer, "strcmp ", 7) == 0){
+				strtok(rcvBuffer, " ");
+				char *str1 = strtok(NULL, " ");
+				char *str2 = strtok(NULL, " ");
+				int ret = strcmp(str1, str2);
+				sprintf(send_buffer, "%d\n", ret);
+				write(c_socket, send_buffer, strlen(send_buffer));
+			}
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
 		}
