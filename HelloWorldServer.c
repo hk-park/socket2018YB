@@ -5,10 +5,9 @@
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
 //#define PORT 10000
- 
+
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
-char buffer[100] = "Hi, I'm server\n";
  
 main( )
 {
@@ -17,6 +16,7 @@ main( )
 	int   len;
 	int   n;
 	int rcvLen;
+	char buffer[100] = "Hi, I'm server\n";
 	char rcvBuffer[100];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
@@ -47,6 +47,12 @@ main( )
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
+			else if(strncasecmp(rcvBuffer, "hello", 5) == 0)
+				strcpy(buffer, "Hi, Nice to meet you");
+			else if(strncasecmp(rcvBuffer, "what is your name", 17) == 0)
+				strcpy(buffer, "my name is soyeon");
+			else if(strncasecmp(rcvBuffer, "how old are you", 15) == 0)
+				strcpy(buffer, "I am 22 old");
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
 		}
