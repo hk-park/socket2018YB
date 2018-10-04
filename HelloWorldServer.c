@@ -15,8 +15,9 @@ main( )
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
-	int   n;
+	int   n,i,c;
 	int rcvLen;
+	char *s1,*s2;
 	char rcvBuffer[100];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
@@ -46,9 +47,51 @@ main( )
 			rcvBuffer[rcvLen] = '\0';
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
-				break;
+				break; 
+	if(!strncmp(rcvBuffer, "안녕하세요",strlen("안녕하세요")))
+	 {
+		 strcpy(buffer,"안녕하세요 만나서 반가워요 .");
+		 n=strlen(buffer);
+	 	 write(c_socket,buffer,n);
+	 }
+	 	else if(!strncmp(rcvBuffer,"이름이 머야?",strlen("이름이 머야?")))
+	 {
+		 strcpy(buffer,"내 이름은 임정인이야");
+	 	n = strlen(buffer);
+ 		write(c_socket,buffer,n);
+ 	}
+		 else if(!strncmp(rcvBuffer,"몇 살이야?",strlen("몇 살이야?")))
+ 	{
+ 		strcpy(buffer,"나는 22살이야.");
+ 		n = strlen(buffer);
+ 		write(c_socket,buffer,n);
+
+ 	}
+		else if(!strncasecmp(rcvBuffer,"strlen ",7))
+	{
+		if(buffer!="\0"){
+			i = strlen(rcvBuffer)-7;
+			sprintf(buffer,"길이 %d",i);
+			write(c_socket, buffer,strlen(buffer));
+			}
+	}
+		else if(!strncasecmp(rcvBuffer,"strcmp ",7))
+	{
+ 		strtok(rcvBuffer," ");
+		s1=strtok(NULL," ");
+ 		s2=strtok(NULL," ");
+	        c=strcmp(s1,s2);
+
+		sprintf(buffer,"%d\n",c);
+		write(c_socket, buffer, n);
+
+	}  
+
+ 		else{
+ 
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
+			}
 		}
 		close(c_socket);
 		if(!strncasecmp(rcvBuffer, "kill server", 11))
