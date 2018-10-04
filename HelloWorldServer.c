@@ -11,7 +11,7 @@
 char buffer[100];
 main( )
 {
-	int   c_socket, s_socket;
+	int   c_socket, s_socket, c_strlen;
 	struct sockaddr_in s_addr, c_addr;
 	int   sock, len, str_len, n;
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
@@ -59,9 +59,8 @@ while(1){
 		else if(!strcmp(buffer,"몇 살이야?\n"))
 			strcpy(buffer, "나는 XX살이야.\n");
 		else if(!strncasecmp(buffer, "strlen", 6)){
-			
-			sprintf(buffer, "%d", );
-			strcpy(buffer, strlen(buffer)-7);
+			c_strlen = strlen(buffer)-8;	
+			sprintf(buffer, "문자열의 길이 : %d\n", c_strlen);
 		}
 		else
 			strcpy(buffer, "만일 내게 물어보면 나는 서버\n");
