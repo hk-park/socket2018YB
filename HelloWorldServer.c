@@ -9,6 +9,7 @@
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
 char buffer[100] = "Hi, I'm server\n";
+char bufferMsg[100];
  
 main( )
 {
@@ -17,7 +18,7 @@ main( )
 	int   len;
 	int   n;
 	int rcvLen;
-	char rcvBuffer[100];
+	char rcvBuffer[100], rcvStr[100];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -47,12 +48,39 @@ main( )
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
+			if(!strncmp(rcvBuffer, ("안녕하세요"),strlen("안녕하세요"))){
+				strcpy(bufferMsg, "안녕하세요. 만나서 반가워요.\n");
+				write(c_socket, bufferMsg, strlen(bufferMsg));
+				}
+			else if(!strncmp(rcvBuffer, "이름이 머야?",strlen("이름이 머야?"))){
+				strcpy(bufferMsg, "내 이름은 시리야.\n");
+				write(c_socket, bufferMsg, strlen(bufferMsg));
+				}
+			else if(!strncmp(rcvBuffer, "몇 살이야?", strlen("몇 살이야?"))){
+				strcpy(bufferMsg, "나는 21살이야. \n");
+				write(c_socket, bufferMsg, strlen(bufferMsg));
+				}
+			else if(strncasecmp(rcvBuffer, "strlen ", 7)== 0){
+				strtok(rcvBuffer, " ");
+				char *rcvTok = strtok(NULL, " ");
+				sprintf(rcvStr, "%d\n", strlen(rcvTok));
+				write(c_socket, rcvStr, strlen (rcvStr));
+   				}
+			else if(strncasecmp(rcvBuffer, "strcmp ", 7)== 0){
+				strtok(rcvBuffer, " ");
+				char *rcvTok1 = strtok(NULL, " ");
+				char *rcvTok2 = strtok(NULL, " ");
+				int rcvCmp = strcmp(rcvTok1, rcvTok2);
+				sprintf(rcvStr, "%d\n", rcvCmp);
+				write(c_socket, rcvStr, strlen(rcvStr));
+				}
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
 		}
-		close(c_socket);
+
+		close(c_socket); 
 		if(!strncasecmp(rcvBuffer, "kill server", 11))
 			break;
-	}	
+	}
 	close(s_socket);
 }
