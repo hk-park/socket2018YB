@@ -2,11 +2,9 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
-
-#define PORT 9000
+ #define PORT 10000
 #define IPADDR "127.0.0.1"
-
-int main(){
+ int main(){
 	int c_socket;
 	struct sockaddr_in c_addr;
 	int n;
@@ -43,5 +41,4 @@ int main(){
 	}	
 	close(c_socket);
 	return 0;
-
-}
+ }

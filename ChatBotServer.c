@@ -2,20 +2,21 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
-#define PORT 9000
+#define PORT 10000
 
 char Hbuffer[100] = "안녕하세요. 만나서 반가워요\n";
 char Nbuffer[100] = "내 이름은 유요섭이야.\n";
 char Abuffer[100] = "나는 21살이야.\n";
+char nothing[100] = "아무것도 아님\n";
  
 main( )
 {
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
-	int   n, i;
+	int   n, i, x;
 	int rcvLen;
-	char rcvBuffer[100],  strcmp1[100], strcmp2[100];
+	char rcvBuffer[100], *ptr,  *ptr1, *ptr2, buffer[100];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -44,22 +45,36 @@ main( )
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
-			if(strncasecmp(rcvBuffer, "안녕하세요.", 6)){
+			if(!strncasecmp(rcvBuffer, "안녕하세요.", 6)){
 				n = strlen(Hbuffer);
 				write(c_socket, Hbuffer, n);
 			}
-			else if(strncasecmp(rcvBuffer, "이름이 뭐야?", 7)){
+			else if(!strncasecmp(rcvBuffer, "이름이 뭐야?", 7)){
 				n = strlen(Nbuffer);
 				write(c_socket, Nbuffer, n);
 			}
-			else if(strncasecmp(rcvBuffer, "몇 살이야?", 6)){
+			else if(!strncasecmp(rcvBuffer, "몇 살이야?", 6)){
 				n = strlen(Abuffer);
 				write(c_socket, Abuffer, n);
 			}
-			else if(strncasecmp(rcvBuffer, "strcmp ", 7)){
-				n = strlen(rcvbuffer);				
-				for(i=7;i<n;i++){
-					if(rcvbuffer[i] = ' ')
+			else if(!strncasecmp(rcvBuffer, "strlen", 6)){
+				x = strlen(rcvBuffer)-7;			
+				sprintf(buffer,"길이 : %d",x);
+				write(c_socket, buffer, strlen(buffer));
+			}
+			else if(!strncasecmp(rcvBuffer, "strcmp", 6)){
+				ptr = strtok(rcvBuffer, " ");
+				ptr = strtok(NULL, " ");
+				ptr1 = ptr;
+				ptr = strtok(NULL, " ");
+				ptr2 = ptr;
+				x = strcmp(ptr1, ptr2);
+				sprintf(buffer,"결과 : %d",x);
+				write(c_socket, buffer, strlen(buffer));
+			}
+			else{
+				n = strlen(nothing);
+				write(c_socket, nothing, n);
 			}
 		}
 		close(c_socket);
