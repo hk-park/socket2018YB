@@ -50,35 +50,46 @@ main( )
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
 			else if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요"))){
-                        strcpy(buffer,"안녕하세요.만나서반가워요");}
-			
+                        strcpy(buffer,"안녕하세요.만나서반가워요");
+			n = strlen(buffer);
+                        write(c_socket, buffer, n);
+			}
 			else if(!strncmp(rcvBuffer, "이름이뭐야?", strlen("이름이뭐야?"))){
-                        strcpy(buffer,"최우석이야");}
+                        strcpy(buffer,"최우석이야");
+			n = strlen(buffer);
+                        write(c_socket, buffer, n);
+			}
                      
 			else if(!strncmp(rcvBuffer, "몇살이야?", strlen("몇살이야?"))){
 			strcpy(buffer,"23살이야");
+			n = strlen(buffer);
+                        write(c_socket, buffer, n);
 			}
-			else if(!strcmp(rcvBuffer,"strlen ")){
-			strtok(rcvBuffer," ");
+			else{
+			if(!strncpy(rcvBuffer,"strlen ",7)==0){
+			token = strtok(rcvBuffer," ");
 			token = strtok(NULL," ");
 			sprintf(buffer,"%d\n",strlen(token));
-			
+			n = strlen(buffer);
+                        write(c_socket, buffer, n);
 			}
-			else if(!strcmp(rcvBuffer,"strcmp ")){
-			strtok(rcvBuffer," ");
-			token1= strtok(NULL," ");
-			token2= strtok(NULL," ");
-			int rcvtoken = strcmp(token1,token2);
-			sprintf(buffer,"%d\n",rcvtoken);
-			
+			else if(!strncmp(rcvBuffer,"strcmp ",7)==0){
+			token1 = strtok(rcvBuffer," ");
+			token1 = strtok(NULL, " ");
+			token2 = strtok(NULL, " ");
+			sprintf(rcvstr,"%d\n",strcmp(token1,token2));
+			n=strlen(rcvstr);
+			write(c_socket, rcvstr, n);	
+			}	
+			else{
+			n=strlen(buffer);
+			write(c_socket,buffer,n);
 			}
-		
-		n = strlen(buffer);
-                write(c_socket, buffer, n);	
+			}
 		}
 		close(c_socket);
 		if(!strncasecmp(rcvBuffer, "kill server", 11))
-			break;
+		break;
 		
 	}
 	close(s_socket);
