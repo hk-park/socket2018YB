@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <string.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
-#define PORT 9000
+#define PORT 10000
 //#define PORT 10000
  
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
@@ -18,6 +18,8 @@ main( )
 	int   n;
 	int rcvLen;
 	char rcvBuffer[100];
+	char rcvstr[100];
+	char *token,*token1,*token2;
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -47,12 +49,37 @@ main( )
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
-			n = strlen(buffer);
-			write(c_socket, buffer, n);
+			else if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요"))){
+                        strcpy(buffer,"안녕하세요.만나서반가워요");}
+			
+			else if(!strncmp(rcvBuffer, "이름이뭐야?", strlen("이름이뭐야?"))){
+                        strcpy(buffer,"최우석이야");}
+                     
+			else if(!strncmp(rcvBuffer, "몇살이야?", strlen("몇살이야?"))){
+			strcpy(buffer,"23살이야");
+			}
+			else if(!strcmp(rcvBuffer,"strlen ")){
+			strtok(rcvBuffer," ");
+			token = strtok(NULL," ");
+			sprintf(buffer,"%d\n",strlen(token));
+			
+			}
+			else if(!strcmp(rcvBuffer,"strcmp ")){
+			strtok(rcvBuffer," ");
+			token1= strtok(NULL," ");
+			token2= strtok(NULL," ");
+			int rcvtoken = strcmp(token1,token2);
+			sprintf(buffer,"%d\n",rcvtoken);
+			
+			}
+		
+		n = strlen(buffer);
+                write(c_socket, buffer, n);	
 		}
 		close(c_socket);
 		if(!strncasecmp(rcvBuffer, "kill server", 11))
 			break;
-	}	
+		
+	}
 	close(s_socket);
 }
