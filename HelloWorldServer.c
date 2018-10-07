@@ -5,11 +5,11 @@
 #include <malloc.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 10000
- 
+#define MAX 100
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
-char buffer[100] = "Hi, I'm server\n";
-char server_msg_buffer[100];
+char buffer[MAX] = "Hi, I'm server\n";
+char msg_buffer[MAX];
  
 main( )
 {
@@ -18,7 +18,7 @@ main( )
 	int   len;
 	int   n;
 	int rcvLen;
-	char rcvBuffer[100];
+	char rcvBuffer[MAX];
 	char *send_buffer=(char*)malloc(sizeof(char)*100);
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
@@ -50,13 +50,13 @@ main( )
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
 			else if(strcmp(rcvBuffer,"안녕하세요.")==0){
-				strcpy(server_msg_buffer, "안녕하세요, 만나서 반가워요.\n"); write("c_socket, server_msg_buffer, strlen(server_msg_buffer)"); 
+				strcpy(msg_buffer, "안녕하세요, 만나서 반가워요.\n"); write(c_socket, msg_buffer, strlen(msg_buffer)); 
 			}
 			else if(strcmp(rcvBuffer,"이름이 뭐야?")==0){
-				strcpy(server_msg_buffer, "내 이름은 한미수야\n."); write(c_socket, server_msg_buffer, strlen(server_msg_buffer));
+				strcpy(msg_buffer, "내 이름은 한미수야\n."); write(c_socket, msg_buffer, strlen(msg_buffer));
 			}
 			else if(strcmp(rcvBuffer,"몇살이야?")==0){
-				strcpy(server_msg_buffer, "나는 21살이야.\n"); write(c_socket, server_msg_buffer, strlen(server_msg_buffer));
+				strcpy(msg_buffer, "나는 21살이야.\n"); write(c_socket, msg_buffer, strlen(msg_buffer));
 			}
 			else if(strncasecmp(rcvBuffer, "strlen ", 7)==0){
 				int client_msg_len=0;
