@@ -48,9 +48,9 @@ main( )
 			else if(!strncmp(rcvBuffer, "strlen", 6)){
 					n=strlen(rcvBuffer)-7;
 					sprintf(buffer,"문자열의 길이는 :%d",n);
-			}else if(!strncmp(rcvBuffer)"strcmp", 6)){
-				 ptr=strtor(rcvBuffer," ");
-				 if(!trcmp(&ptr[1],&ptr[2]))
+			}else if(!strncmp(rcvBuffer,"strcmp", 6)){
+				 ptr=strtok(rcvBuffer," ");
+				 if(!strcmp(&ptr[1],&ptr[2]))
 				 		strcpy(buffer,"0.서로 같은 문자입니다.");
 				else strcpy(buffer,"1.서로 다른 문자입니다.");
 			}else{
