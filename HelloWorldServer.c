@@ -21,7 +21,9 @@ main( )
 	char rcvBuffer[MAX];
 	char *send_buffer=(char*)malloc(sizeof(char)*100);
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
-	
+	char *token;
+        int i=0;
+
 	memset(&s_addr, 0, sizeof(s_addr));
 	//s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	s_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -49,23 +51,22 @@ main( )
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
-			else if(!strcmp(rcvBuffer,"안녕하세요.",strlen("안녕하세요."))){
+			else if(!strncmp(rcvBuffer,"안녕하세요.",strlen("안녕하세요."))){
 			//두개의 인자 값의 차이가 없으면 0으로 리턴됨. = (strcmp(rcvBuffer, "안녕하세요.", strlen("안녕하세요."))==0)
 				strcpy(msg_buffer, "안녕하세요, 만나서 반가워요.\n"); 
 			}
-			else if(!strcmp(rcvBuffer,"이름이 뭐야?",strlen("이름이 뭐야?")))
+			else if(!strncmp(rcvBuffer,"이름이 뭐야?",strlen("이름이 뭐야?")))
 				strcpy(msg_buffer, "내 이름은 한미수야\n.");
 			
-			else if(!strcmp(rcvBuffer,"몇살이야?",strlen("몇살이야?")))
+			else if(!strncmp(rcvBuffer,"몇살이야?",strlen("몇살이야?")))
 				strcpy(msg_buffer, "나는 21살이야.\n");
 			
 			else if(!strncasecmp(rcvBuffer, "strlen ", 7)){ //공백이 올지몰라 공백 포함 7바이트
 				sprintf(buffer, "내 문자열의 길이는 %d입니다.", strlen(rcvBuffer)-7);
 			}
 			else if(!strncasecmp(rcvBuffer, "strcmp ", 7)){
-				char *token;
 				char *str[3]; //포인팅한 것을 저장하는 공간
-				int i=0;
+				i=0;
 				token=strtok(rcvBuffer, " ");
 				while(token != NULL){
 					str[i++]=token;
@@ -73,10 +74,38 @@ main( )
 				}
 				if(i<3)
 					sprintf(buffer, "문자열 비교를 위해서는 두 문자열이 필요합니다.");
-				else if(!strcmp(str[1]. str[2])) //같은 문자열이면
+				else if(!strcmp(str[1],str[2]))
 					sprintf(buffer, "%s와 %s는 같은 문자열입니다.", str[1], str[2]);
 				else
 					sprintf(buffer, "%s와 %s는 다른 문자열입니다.", str[1], str[2]);
+			}
+			else if(!strncasecmp(rcvBuffer, "readfile ", 9)){
+				FILE *fp;
+				char *rstr[2];
+				i=0;
+				token=strtok(rcvBuffer, " ");
+				while(token != NULL){
+					rstr[i++]=token;
+					token=strtok(NULL, " ");
+				}
+				
+				fp=fopen(rstr[1],"r");
+				if(fp){
+					while(fgets(buffer, 100, (FILE *)fp))
+						printf("%s", buffer);
+				}
+				fclose(fp);
+			}
+			else if(!strncasecmp(rcvBuffer, "exec", 4)){
+				char *estr;
+				i=0;
+				token=strtok(rcvBuffer, " ");
+				estr=strtok(NULL,"\0");
+				int ret=system(estr);
+				if(!ret)
+					printf("command Success!!\n");
+				else
+					printf("command Failed!!\n");
 			}
 			else
 				strcpy(buffer, "무슨 말인지 모르겠습니다.");
