@@ -16,6 +16,7 @@ int main(){
 	int rcvLen;
 	char rcvBuffer[BUFSIZ];
 	char tempBuffer[BUFSIZ];
+	char clearBuffer[BUFSIZ];
 	FILE *fp;
 	/*if(fp){
 		while(fgets(buffer, BUFSIZ, (FILE *)fp)){
@@ -91,11 +92,7 @@ int main(){
 						sprintf(buffer, "%s %s -다름\n", str[1], str[2]);
 					}
 				}
-				else if(!strncasecmp(rcvBuffer,"readflie", strlen("readfile"))){
-					//sprintf(buffer,"\n파일읽는 중..\n");
-					//write(c_socket, buffer, strlen(buffer));
-					//rcvBuffer[strlen(rcvBuffer)-1] = '\0';
-					
+				else if(!strncasecmp(rcvBuffer,"readfile", strlen("readfile"))){
 					char *token_2;
 					char *str_2[2];
 					int i=0;
@@ -105,20 +102,42 @@ int main(){
 						token_2 = strtok(NULL, " ");
 					}
 					if(i >= 2){
-						//sprintf(buffer,"파일읽는 중_2\n");
-						//write(c_socket, buffer, strlen(buffer));
-						
-						fp = fopen(str_2[1], "r");
-						while(fgets(buffer, BUFSIZ, (FILE *)fp)){
-							strcat(tempBuffer, buffer);
-							strcpy(buffer, tempBuffer);
-							printf("클라이언트 전송 완료\n");
+						if((fp = fopen(str_2[1], "r")) == NULL){
+							strcpy(buffer,"없는 파일 입니다.\n");
 						}
-						fclose(fp);
+						else{
+							while(fgets(buffer, BUFSIZ, (FILE *)fp)){
+								strcat(tempBuffer, buffer);
+								printf("클라이언트 전송 완료\n");
+							}
+							strcpy(buffer, tempBuffer);
+							strcpy(tempBuffer, clearBuffer);
+							fclose(fp);
+						}
 					}
 					else{
 						sprintf(buffer, "잘못 입력 되었습니다.\n");
-						//write(c_socket, buffer, strlen(buffer));
+					}
+				}
+				else if(!strncasecmp(rcvBuffer,"exec", strlen("exec"))){
+					char *token, *str;
+					int i=0,tf;
+					token = strtok(rcvBuffer," ");
+					while(token!=NULL){
+						str = token;
+						if(i>=1){
+							strcat(tempBuffer, str);
+						}
+						token=strtok(NULL,"\0");
+						i++;
+					}
+					tf = system(tempBuffer);
+					strcpy(tempBuffer,clearBuffer);
+					if(tf == 0){
+						sprintf(buffer, "[%s]command is exectued.\n",tempBuffer);
+					}
+					else{
+						sprintf(buffer, "[%s]command failed.\n",tempBuffer);
 					}
 				}
 				else {
