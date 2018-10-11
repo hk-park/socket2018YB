@@ -42,46 +42,73 @@ main( )
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
 		printf("Client is connected\n");
 		while(1){
-			char * ptr;
-			char * ptr1;
-			char string[256];
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
-			if(!strcmp(rcvBuffer,"안녕하세요")){
-				n = strlen("안녕하세요 만나서 반가워요\n");
-				write(c_socket,"안녕하세요 만나서 반가워요\n",n);
-			}
-			else if(!strcmp(rcvBuffer,"이름이 머야?")){
-				n = strlen("내 이름은 장준수야\n");
-				write(c_socket,"내 이름은 장준수야\n",n);
-			}
-			else if(!strcmp(rcvBuffer,"몇 살이야?")){
-				n = strlen("나는 스무살이야\n");
-				write(c_socket,"나는 스무살이야\n");
-			}
-			else{
-				ptr1 = strtok(rcvBuffer," ");
-				if(!strncasecmp(ptr1,"strlen",6)){
-					ptr1 = strtok(NULL," ");
-					sprintf(string,"%d\n",strlen(ptr1));
-					n = strlen(string);
-					write(c_socket,string,n);
+			else if(!strncmp(rcvBuffer,"안녕하세요", strlen("안녕하세요")))
+				strcpy(buffer,"안녕하세요 만나서 반가워요.");
+			else if(!strncmp(rcvBuffer,"이름이 머야?", strlen("이름이 머야?")))
+				strcpy(buffer,"내 이름은 장준수야.");
+			else if(!strncmp(rcvBuffer,"몇 살이야?", strlen("몇 살이야?")))
+				strcpy(buffer,"스무살이야");
+			else if(!strncasecmp(rcvBuffer,"strlen ",7))
+				sprintf(buffer,"내 문자열의 길이는 %d입니다",strlen(rcvBuffer)-7);
+			else if(!strncasecmp(rcvBuffer,"strcmp ",7)){
+				char *token;
+				char *str[3];
+				int i = 0;
+				token = strtok(rcvBuffer," ");
+				while(token !=NULL){
+					str[i] = token;
+					i++;
+					token = strtok(NULL," ");
 				}
-				else if(!strncasecmp(ptr1,"strcmp",6)){
-					ptr1 = strtok(NULL," ");
-					ptr = strtok(NULL," ");
-					sprintf(string,"%d\n",strcmp(ptr1,ptr));
-					n = strlen(string);
-					write(c_socket,string,n);
-				}
-				else{
-					n = strlen(buffer);
-					write(c_socket, buffer, n);
-				}
+				if(i<3)
+					sprintf(buffer,"문자열 비교를 위해서는 두 문자열이필요하다");
+				else if(!strcmp(str[1],str[2])) //같은 문자열이면
+					sprintf(buffer,"%s 와 %s 는 같은 문자열입니다",str[1],str[2]);
+				else
+					sprintf(buffer,"%s와 %s는 다른 문자열입니다",str[1],str[2]);
 			}
+			if(!strncasecmp(rcvBuffer,"readfile ",9)){
+				FILE *fp;
+				char *token;
+				char buffer[100];
+				char *str2[2];
+				int i = 0;
+	
+				token = strtok(rcvBuffer," ");
+				while(token != NULL){
+					str2[i] = token;
+					i++;
+					token = strtok(NULL," ");
+				}
+				fp = fopen(str2[1],"r");
+				if(fp){
+					while(fgets(buffer,100,(FILE *)fp))
+						printf("%s",buffer);
+				}
+				fclose(fp);
+			}
+			if (!strncasecmp(rcvBuffer,"exec ",5)){
+				char *token;
+				char *str3[3];
+				int i = 0;
+				char *command;
+	
+				token = strtok(rcvBuffer," ");
+				command = strtok(NULL,"\0");
+				int ret = system(command);
+				if(!ret)
+					printf("command is execute");
+				else
+					printf("command failed");
+			}
+				
+			n = strlen(buffer);
+			write(c_socket,buffer,n);
 		
 		}
 		close(c_socket);
