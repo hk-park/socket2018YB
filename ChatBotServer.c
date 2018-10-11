@@ -11,12 +11,13 @@ char nothing[100] = "아무것도 아님\n";
  
 main( )
 {
+	FILE *fp;
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
 	int   n, i, x;
 	int rcvLen;
-	char rcvBuffer[100], *ptr,  *ptr1, *ptr2, buffer[100];
+	char rcvBuffer[100], *ptr,  *ptr1, *ptr2, buffer[100], fbuffer[100];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -43,6 +44,7 @@ main( )
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
 			printf("[%s] received\n", rcvBuffer);
+			buffer[0] = '\0';
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
 			if(!strncasecmp(rcvBuffer, "안녕하세요.", 6)){
@@ -70,6 +72,32 @@ main( )
 				ptr2 = ptr;
 				x = strcmp(ptr1, ptr2);
 				sprintf(buffer,"결과 : %d",x);
+				write(c_socket, buffer, strlen(buffer));
+			}
+			else if(!strncasecmp(rcvBuffer, "readfile", 8)){
+				ptr = strtok(rcvBuffer, " ");
+				ptr = strtok(NULL, " ");
+				ptr1 = ptr;
+				fp = fopen(ptr1, "r");
+				if(fp){
+					while(fgets(fbuffer, 100, (FILE *)fp))
+							strcat(buffer, fbuffer);
+				}
+				else{
+					strcpy(buffer, "존재하지 않는 파일");
+				}
+				fclose(fp);	
+				write(c_socket, buffer, strlen(buffer));			
+			}
+			else if(!strncasecmp(rcvBuffer, "exec", 4)){
+				ptr = strtok(rcvBuffer, " ");
+				ptr = strtok(NULL, "NULL");
+				ptr1 = ptr;			
+				int ret = system(ptr1);
+				if(!ret)
+					sprintf(buffer, "<%s> command Success!!\n", ptr);
+				else
+					sprintf(buffer, "<%s> command Failed!!\n", ptr);
 				write(c_socket, buffer, strlen(buffer));
 			}
 			else{
