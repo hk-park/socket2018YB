@@ -77,13 +77,14 @@ main( )
 			}
 			else if(strncasecmp(rcvBuffer, "fileread ",7) == 0){
 				char *token;
+				char *commands;
 				token = strtok(rcvBuffer, " ");
+				commands = strtok(NULL,"\0");
+				token = strtok(commands," ");
 				strcpy(buffer,"");
-				do{
+				while(token!=NULL){
 					FILE *fp;
 					char fileBuffer[255];
-					token = strtok(NULL, " ");
-					if(token == NULL)break;
 					fp = fopen(token,"r");
 					if(fp){
 						while(fgets(fileBuffer,255,fp)){
@@ -94,11 +95,11 @@ main( )
 						sprintf(fileBuffer,"%s 파일을 여는데 실패했습니다.\n",token);
 						strcat(buffer,fileBuffer);
 					}
-				}while(token!=NULL);
+					token = strtok(NULL, " ");
+				}
 			}
 			else if(strncasecmp(rcvBuffer, "exec ",5) == 0){
 				char *token;
-				strcpy(command,"");
 				token = strtok(rcvBuffer, " ");
 				token = strtok(NULL, "\0");
 				system(token);
