@@ -103,10 +103,9 @@ main( )
 				
 				int ret = system(token);
 				if(!ret)
-                			printf("command Success!");
+                			printf("command Success!\n");
         			else
-                			printf("command Failed");
-        			return 0;
+                			printf("command Failed\n");
 			}
 			else
 				strcpy(buffer, "무슨 말인지 모르겠습니다.");
