@@ -5,20 +5,20 @@
 
 #define PORT 9000
 #define IPADDR "127.0.0.1"
-#define SEP " "//strtok분리 기호
+//#define SEP " "//strtok분리 기호
 
 int main(){
 	int c_socket;
 	struct sockaddr_in c_addr;
 	int len;
-	int n, ntok = 0, spa = -1, plag = 0, cmp;
-	char *token = NULL;
-	char *diff = NULL;
-	char *diff_2 = NULL;
+	int n/*, ntok = 0, spa = -1, plag = 0, cmp*/;
+	//char *token = NULL;
+	//char *diff = NULL;
+	//char *diff_2 = NULL;
 
 	char rcvBuffer[BUFSIZ];
 	char sendBuffer[BUFSIZ];
-	char tokenBuffer[BUFSIZ];
+	//char tokenBuffer[BUFSIZ];
 	
 	c_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
@@ -41,7 +41,7 @@ int main(){
 		if(strncasecmp(sendBuffer, "quit", 4) == 0 || strncasecmp(sendBuffer, "kill server", 11) == 0){
 			break;
 		}
-		if(strncasecmp(sendBuffer,"strlen",6) == 0){
+		/*if(strncasecmp(sendBuffer,"strlen",6) == 0){
 		  strcpy(tokenBuffer, sendBuffer);
 		  token = strtok(tokenBuffer, SEP);
 		  while(token != NULL){
@@ -58,9 +58,9 @@ int main(){
 		  printf("[%s]의 문자열 개수: %d 띄어진부분 개수: %d\n",sendBuffer,ntok,spa);
 		  ntok=0;
 		  spa=-1;
-		}
+		}*/
 		
-		if(strncasecmp(sendBuffer,"strcmp",6) == 0){
+		/*if(strncasecmp(sendBuffer,"strcmp",6) == 0){
 			strcpy(tokenBuffer, sendBuffer);
 			token = strtok(tokenBuffer, SEP);
 			while(token!=NULL){
@@ -98,7 +98,7 @@ int main(){
 				}
 			}
 			spa=-1;
-		}
+		}*/
 		
 		if((n = read(c_socket, rcvBuffer, sizeof(rcvBuffer))) < 0){
 			printf("[ERR] Cannot read\n");

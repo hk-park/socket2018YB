@@ -15,6 +15,21 @@ int main(){
 	int len, n;
 	int rcvLen;
 	char rcvBuffer[BUFSIZ];
+	char tempBuffer[BUFSIZ];
+	FILE *fp;
+	/*if(fp){
+		while(fgets(buffer, BUFSIZ, (FILE *)fp)){
+			printf("%s\n", buffer);
+		}
+		fclose(fp);
+		int ret = system("mkdir testdir");
+		if(!ret){
+			printf("Command Success!!\n");
+		}
+		else{
+			printf("Command Failed!!\n");
+		}
+	}*/
 	
 	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
@@ -51,7 +66,65 @@ int main(){
 				else if(!strncmp(rcvBuffer, "몇 살이야?", strlen("몇 살이야?"))){
 					strcpy(buffer, "나는 xx살이야.");
 				}
-				if(strncasecmp(rcvBuffer, "quit", 4)==0 || strncasecmp(rcvBuffer, "kill server", 11) == 0){
+				else if(!strncasecmp(rcvBuffer,"strlen", 6)){
+					sprintf(buffer,"내 문자열의 길이는 %d입니다.\n", strlen(rcvBuffer)-7);
+				}
+				else if(!strncasecmp(rcvBuffer,"strcmp", 6)){
+					char *token;
+					char *str[3];
+					int i=0;
+					token = strtok(rcvBuffer, " ");
+					while(token != NULL){
+						str[i++]=token;
+						token = strtok(NULL, " ");
+					}
+					if(i<=1 || i>=3){
+						sprintf(buffer, "문자열 비교를 위해서는 두 문자열이 필요합니다.\n");
+					}
+					else if(strcmp(str[1], str[2]) == 0){
+						sprintf(buffer, "%s %s 같음\n", str[1], str[2]);
+					}
+					else if(strcmp(str[1], str[2]) >= 1){
+						sprintf(buffer, "%s %s +다름\n", str[1], str[2]);
+					}
+					else if(strcmp(str[1], str[2]) <= -1){
+						sprintf(buffer, "%s %s -다름\n", str[1], str[2]);
+					}
+				}
+				else if(!strncasecmp(rcvBuffer,"readflie", strlen("readfile"))){
+					//sprintf(buffer,"\n파일읽는 중..\n");
+					//write(c_socket, buffer, strlen(buffer));
+					//rcvBuffer[strlen(rcvBuffer)-1] = '\0';
+					
+					char *token_2;
+					char *str_2[2];
+					int i=0;
+					token_2 = strtok(rcvBuffer, " ");
+					while(token_2 != NULL){
+						str_2[i++]=token_2;
+						token_2 = strtok(NULL, " ");
+					}
+					if(i >= 2){
+						//sprintf(buffer,"파일읽는 중_2\n");
+						//write(c_socket, buffer, strlen(buffer));
+						
+						fp = fopen(str_2[1], "r");
+						while(fgets(buffer, BUFSIZ, (FILE *)fp)){
+							strcat(tempBuffer, buffer);
+							strcpy(buffer, tempBuffer);
+							printf("클라이언트 전송 완료\n");
+						}
+						fclose(fp);
+					}
+					else{
+						sprintf(buffer, "잘못 입력 되었습니다.\n");
+						//write(c_socket, buffer, strlen(buffer));
+					}
+				}
+				else {
+					strcpy(buffer, "무슨말이오.??\n");
+				}
+				if(strncasecmp(rcvBuffer, "kill server", 11) == 0){
 					break;
 				}
 				n = strlen(buffer);
