@@ -47,12 +47,25 @@ main( )
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
+			else if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요")))
+				strcpy(buffer, "안녕하세요. 만나서 반가워요");
+
+			else if(!strncmp(rcvBuffer, "이름이 뭐야?",  strlen("이름이 뭐야?")))
+				strcpy(buffer, "내 이름은 봇이야.");
+
+			else if(!strncmp(rcvBuffer, "몇 살이야?", strlen("몇 살이야?")))
+				strcpy(buffer, "내 나이는 139살이야.");
+		
+		}			
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
 		}
-		close(c_socket);
-		if(!strncasecmp(rcvBuffer, "kill server", 11))
+		
+			if(strncasemp(rcvBuffer, "kill server", 11))
 			break;
-	}	
+			
+		close(c_socket);
+				
+	}
 	close(s_socket);
 }
