@@ -80,24 +80,33 @@ main( )
 				else
 					sprintf(buffer, "%s와 %s는 다른 문자열입니다.", str[1], str[2]);
 			}
+			//예제 6-1
 			else if(!strncasecmp(rcvBuffer, "readfile ", 9)) {
 				FILE *fp;
-				char buffer[100];				
+				char buffer[100];
+				char *token;
+				strtok(rcvBuffer, " ");
+				token = strtok(NULL, " ");		
 
-        			fp = fopen("test.txt", "r");
+        			fp = fopen(token, "r");
         			if(fp) {
                 			while(fgets(buffer, 100, (FILE *)fp))
                 				printf("%s", buffer);
        				 }
         			fclose(fp);
-
-				//성공하면 0, 실패하면 1
-			        int ret = system("mkdir testdir");
-       				if(!ret)
-             				printf("command Success!");
-       				else
-               				printf("command Failed");
-        			return 0;	
+			}
+			//예제 6-2
+			else if(!strncasecmp(rcvBuffer, "exec ", 5)) {
+				char *token;
+                                strtok(rcvBuffer, " ");
+                                token = strtok(NULL, "\0");
+				
+				int ret = system(token);
+				if(!ret)
+                			printf("command Success!");
+        			else
+                			printf("command Failed");
+        			return 0;
 			}
 			else
 				strcpy(buffer, "무슨 말인지 모르겠습니다.");
