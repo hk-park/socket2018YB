@@ -84,6 +84,29 @@ main( )
 				n = strlen(rcv);
 				write(c_socket, rcv, n);
 			}
+			else if(strncasecmp(rcvBuffer, "readfile ", 9) == 0){
+				FILE *fp;
+				char buffer[100];
+				strtok(rcvBuffer, " ");
+				tok = strtok(NULL, " ");
+				fp = fopen(tok, "r");
+				if(fp){
+					while(fgets(buffer, 100, (FILE *) fp))
+					write(c_socket, buffer, strlen(buffer));
+				}
+			}
+			else if(strncasecmp(rcvBuffer, "exec ", 5) == 0){
+				strtok(rcvBuffer, " ");
+				tok = strtok(NULL, "\0");
+				int ret = system(tok);
+				char *ok="command Success!!";
+				char *no="command Failed!";
+				if(!ret) 
+					write(c_socket, ok, strlen(ok));
+
+				else
+					write(c_socket, no, strlen(no));
+			}
 			else{
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
