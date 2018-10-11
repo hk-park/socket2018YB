@@ -113,7 +113,7 @@ main( )
 					{
 
 							strtok(rcvBuffer," ");
-							jdy1 = strtok(NULL," ");
+							jdy1 = strtok(NULL,"NULL");
 							jdy2 = jdy1;
 							int ret = system(jdy2);
 							
@@ -121,7 +121,8 @@ main( )
 							  sprintf(buffer,"%s,command is Success",jdy2);
 							else
 							  sprintf(buffer,"%s,command is failed",jdy2);
-
+							 n =strlen(buffer);
+                         				write(c_socket, buffer, n);
 						
 					}
 	                    else{
