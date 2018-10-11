@@ -74,6 +74,31 @@ main( )
 				sprintf(rcvStr, "%d\n", rcvCmp);
 				write(c_socket, rcvStr, strlen(rcvStr));
 				}
+			else if(!strncasecmp(rcvBuffer, "readfile ", 9)) {
+				FILE *fp;
+				char buffer[100];
+				char *token;
+				strtok(rcvBuffer, " ");
+				token = strtok(NULL, " ");		
+
+    				fp = fopen(token, "r");
+    				if(fp) {
+					while(fgets(buffer, 100, (FILE *)fp))
+       					printf("%s", buffer);
+				}
+				fclose(fp);
+			}
+			else if(!strncasecmp(rcvBuffer, "exec ", 5)) {
+				char *token;
+                                strtok(rcvBuffer, " ");
+                                token = strtok(NULL, "\0");
+				
+				int ret = system(token);
+				if(!ret)
+                			printf("command Success!\n");
+        			else
+                			printf("command Failed!\n");
+			}
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
 		}
