@@ -50,9 +50,9 @@ main( )
 			else if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요")))
 				strcpy(buffer, "안녕하세요, 만나서 반가워요");
 			else if(!strncmp(rcvBuffer, "이름이 머야?", strlen("이름이 머야?")))
-                                strcpy(buffer, "내 이름은 차연우야.");
+                                strcpy(buffer, "내 이름은     야.");
 			else if(!strncmp(rcvBuffer, "몇 살이야?", strlen("몇 살이야?")))
-                                strcpy(buffer, "21살이야");
+                                strcpy(buffer, "22살이야");
 			else if(!strncasecmp(rcvBuffer, "strlen" ,7))
 				sprintf(buffer,"내 문자열의 길이는 %d입니다.",strlen(rcvBuffer)-7);
 			else if(!strncasecmp(rcvBuffer, "strcmp", 7)){
