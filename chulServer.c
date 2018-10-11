@@ -106,7 +106,9 @@ main( )
 								token2 = strtok(NULL, " ");
 					}
 					if(strncasecmp(stp[1],"mkdir",5)==0){
-						int ret = system("mkdir %s",stp[2]);
+						char command[100];
+						sprintf(command, "mkdir %s", stp[2]);
+						int ret = system(command);
 						sprintf(sendmail,"디렉토리가 생성되었습니다.\n");
 						write(c_socket,sendmail,strlen(sendmail));
 					}
