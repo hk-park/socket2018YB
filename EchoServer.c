@@ -168,7 +168,7 @@ int main(){
 						}
 					}
 				
-				write(c_socket, buffer, strlen(buffer));	//클라이언트에게  내용 보냄	
+				write(c_socket, buffer, strlen(buffer));	//클라이언트에게  내용 보냄	.
 			
 				}
 		
