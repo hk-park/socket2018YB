@@ -42,41 +42,43 @@ main( )
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
 		printf("Client is connected\n");
-
-                n = strlen(buffer);
-                write(c_socket, buffer, n);	
-
 		while(1){
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
-			else if(strncasecmp(rcvBuffer,"안녕하세요.",strlen("안녕하세요."))==0)
-				sprintf(buffer,"안녕하세요. 만나서 반가워요.");	
-   			else if(strncasecmp(rcvBuffer,"이름이 뭐야?",strlen("이름이 뭐야?"))==0)
-           	sprintf(buffer,"이재영");	
- 			else if(strncasecmp(rcvBuffer,"몇 살이야?",strlen("몇 살이야?"))==0)
-       		sprintf(buffer," 23살");	
-			else if(strncasecmp(rcvBuffer,"strlen",6)==0)
-			{
-				strtok(rcvBuffer," ");
-				a1 = strtok(NULL," ");
-				sprintf(buffer,"%d",strlen(a1));
+			
+			else if(!strncmp(rcvBuffer,"안녕하세요", strlen("안녕하세요")))
+				strcpy(buffer,"안녕하세요 만나서 방가워요");
+			else if(!strncmp(rcvBuffer,"몇살이야?",  strlen("몇살이야?")))
+				strcpy(buffer,"23살");	
+
+			else if(!strncmp(rcvBuffer,"이름이뭐야?",  strlen("이름이뭐야?")))
+				strcpy(buffer,"이재영");
+			
+			else if(!strncmp(rcvBuffer, "strlen ", 7))
+				sprintf(buffer, "내 문자열의 길이는 %d입니다 ",strlen(rcvBuffer)-7);
+
+			else if(!strncmp(rcvBuffer,"strcmp" ,7)){
+			char * token;
+			char * str[3];
+			int i =0;
+			token = strtok(rcvBuffer ," ");
+			while(token!=NULL){
+			str[i++] = token;
+			token = strtok(NULL, " ");
+			
 			}
-        	else if(strncasecmp(rcvBuffer,"strcmp",6)==0)
-        	        {
- 	 			strtok(rcvBuffer," ");
-				a1 = strtok(NULL," ");
-				a2 = strtok(NULL," ");
-      			sprintf(buffer,"%d",strcmp(a1,a2));
-               	 	}
-			else sprintf(buffer,"nop");	
+			if(i<3)
+			sprintf(buffer, "문자열 비교를 위해선 문자 두개가 필요합니다");
+			else if(!strcmp(str[1],str[2]))
+			sprintf(buffer, "%s %s는 다른 문자열입니다",str[1],str[2]);
+			else
+			sprintf(buffer, "다른문자");
+	
+				}
 
-
-			n = strlen(buffer);		
-			write(c_socket, buffer, n);
-		}
 		close(c_socket);
 		if(strncasecmp(rcvBuffer, "kill server", 11)==0) break;
 	}	
