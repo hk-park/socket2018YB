@@ -3,13 +3,8 @@
 #include <sys/socket.h>
 #include <string.h>
 #define PORT 8000
- 
-char buffer[100] = "Sorry, I don't understand.\n";
-char buffer1[100] = "Hi, nice to meet you.\n";
-char buffer2[100] = "My name is ChBot\n";
-char buffer3[100] = "I'm 24\n";
-char buffer4[100] = " ";
-char*str[100];
+
+char buffer[100]; 
 
 main( )
 {
@@ -44,47 +39,78 @@ main( )
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
 			printf("[%s] received\n", rcvBuffer);
-			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
-				break;
-			else if(strncasecmp(rcvBuffer, "hi", 2) == 0 || strncasecmp(rcvBuffer, "hello", 5) == 0) {
-				n = strlen(buffer1);
-				write(c_socket, buffer1, n);
-			}
-			else if(strncasecmp(rcvBuffer, "what is your name?", 18) == 0 || strncasecmp(rcvBuffer, "what's your name?", 17) == 0) {
-				n = strlen(buffer2);
-				write(c_socket, buffer2, n);
-			}
-			else if(strncasecmp(rcvBuffer, "how old are you?", 15) == 0) {
-				n = strlen(buffer3);
-				write(c_socket, buffer3, n);
-			}
-			else if(strncasecmp(rcvBuffer, "strlen ", 7)  == 0) {
-				str[0] = strtok(rcvBuffer, " ");
-				str[1] = strtok(NULL, "");
-			
-				n = strlen(str[1]);
-				write(c_socket, str[1], n);
-			}
-			else if(strncasecmp(rcvBuffer, "strcmp ", 7) == 0) {
-				str[0] = strtok(rcvBuffer, " ");
-				str[1] = strtok(NULL, " ");
-				str[2] = strtok(NULL, "");
-				
-				if(strcmp(str[1], str[2]) == 0) {
-					strcpy(buffer4, "0\n");
-					n = strlen(buffer4);
-					write(c_socket, buffer4, n);
+
+			if(!strncasecmp(rcvBuffer, "open", 4)) {
+				FILE *fp;
+				char buffer2[100];
+
+				fp = fopen("test.txt", "r");
+				if(fp) {
+					while(fgets(buffer, 100, (FILE *)fp)) {
+						n = strlen(buffer);
+						write(c_socket, buffer, n);
+					}
 				}
-				else {
-					strcpy(buffer4, "1\n");
-					n = strlen(buffer4);
-					write(c_socket, buffer4, n);
+				fclose(fp);
+			}
+			else if(!strncasecmp(rcvBuffer, "exec", 4)) {
+				char *token;
+				char *str[2];
+				int i = 0;
+				int ret;
+				token = strtok(rcvBuffer, " ");
+
+				while(token != NULL) {
+					str[i++] = token;
+					token = strtok(NULL, " ");
+				}
+				if(!strcmp(str[1], "mkdir"))
+					ret = system("mkdir testdir");
+				else if(!strcmp(str[1], "ls"))
+					ret = system("ls > list.txt");
+				if(!ret)
+					strcpy(buffer, "Command Success!!\n");
+				else
+					strcpy(buffer, "Command Failed!!!\n");
+			}
+			else if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
+				break;
+			else if(!strncasecmp(rcvBuffer, "hi", 2)) {
+				strcpy(buffer, "Hi. nice to meet you.");
+			}
+			else if(!strncasecmp(rcvBuffer, "what is your name?", 18)) {
+				strcpy(buffer, "my name is Chbot.");
+			}
+			else if(!strncasecmp(rcvBuffer, "how old are you?", 15)) {
+				strcpy(buffer,"I'm 24");
+			}
+			else if(!strncasecmp(rcvBuffer, "strlen ", 7)) {
+				sprintf(buffer, "String lengh : %d", strlen(rcvBuffer) - 7);
+			}
+			else if(!strncasecmp(rcvBuffer, "strcmp ", 7)) {
+				char *token;
+				char *str[3];
+				int i = 0;
+				token = strtok(rcvBuffer, " ");
+
+				while(token != NULL) {
+					str[i++] = token;
+					token = strtok(NULL, " ");
+				}
+				if(i < 3)
+					sprintf(buffer, "Not enough String");
+				else if(!strcmp(str[1], str[2])) {
+					sprintf(buffer, "String[1] : %s\tString[2] : %s\tEqual!!", str[1], str[2]);
+				}
+				else {		
+					sprintf(buffer, "String[1] : %s\tString[2] : %s\tNOT Equal!!", str[1], str[2]);
 				}
 			}
 			else {
-				n = strlen(buffer);
-				write(c_socket, buffer, n);
+				strcpy(buffer, "Sorry. I don't Understand..");
 			}
+			n = strlen(buffer);
+			write(c_socket, buffer, n);
 		}
 		close(c_socket);
 		if(!strncasecmp(rcvBuffer, "kill server", 11))
