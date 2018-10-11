@@ -154,7 +154,7 @@ int main(){
 						while(token != NULL)
 						{
 							str[i++]= token;
-							token = strtok(NULL,""); //\0도 가능함.
+							token = strtok(NULL,""); //\0도 가능함..
 						}	
 						if(i<2)
 							sprintf(buffer,"명령 인수가 잘못되었습니다.");
