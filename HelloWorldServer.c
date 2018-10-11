@@ -15,6 +15,7 @@ main( )
 	struct sockaddr_in s_addr, c_addr;
 	int   sock, len, str_len, n, cnt;
 	char *ptr, *ptr1, *ptr2;
+	
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -65,13 +66,13 @@ while(1){
 		}
 		else if(!strncasecmp(buffer, "strcmp", 6)){ //5-3 strcmp 기능추가
 			cnt = 0;
-			ptr = strchr(buffer, ' ');//NULL을 만날때까지 토큰(공백)의 갯수를 세는 코드 2개 이하이면 strcmp 코드 건너뜀
+			ptr = strchr(buffer, ' ');//NULL을 만날때까지 토큰(공백)의 갯수를 세는 코드 2개  미만이면 strcmp 코드 건너뜀
 			while (ptr != NULL){
        		cnt++;
         		ptr = strchr(ptr + 1, ' ');
    			 }
 			if(2>cnt){
-				strcpy(buffer, "strcmp 명령 인자를 제대로 입력하거라.\n");
+				strcpy(buffer, "[ strcmp 문자열1 문자열 2 ] 형식으로 입력해주세요.\n");
 				write(c_socket, buffer, strlen(buffer));
 				continue;
 			}
@@ -81,6 +82,56 @@ while(1){
 			ptr = strtok(NULL, "\n");
 			ptr2 = ptr;
 			sprintf(buffer, "strcmp 결과 : %d\n", strcmp(ptr1, ptr2));
+		}
+		else if(!strncasecmp(buffer, "readfile", 8)){ //6-1 챗봇 기능추가
+				char *token;
+				char *str[2];
+				char tempbuffer[100];
+				int i = 0;
+				FILE *fp=NULL;
+				token = strtok(buffer, " ");
+				while(token != NULL){
+					str[i++] = token;
+					token = strtok(NULL, " ");
+				}
+				if(i < 2){
+					sprintf(buffer, "[ readfile 문자열1 ] 형식으로 입력해주세요.\n");
+					write(c_socket, buffer, strlen(buffer));
+					continue;
+				}
+				str[1][strlen(str[1]) - 1] = '\0'; //토큰의 개행문자 제거
+				fp = fopen( str[1], "r");
+				buffer[0]='\0';
+				if(fp){
+
+						while(fgets(tempbuffer, 100, (FILE *)fp))
+						strcat(buffer,tempbuffer);
+				}
+				else
+					strcpy(buffer, "파일을 찾을 수 없습니다.\n");
+				
+		}
+		else if(!strncasecmp(buffer, "exec", 4)){ //6-2 system() 함수를 활용한 명령어 실행 실습
+			int ret;
+			cnt = 0;
+			ptr = strchr(buffer, ' ');//NULL을 만날때까지 토큰(공백)의 갯수를 세는 코드 1개 미만이면 exec 코드 건너뜀
+			while (ptr != NULL){
+       		cnt++;
+        		ptr = strchr(ptr + 1, ' ');
+   			 }
+			if(1>cnt){
+				strcpy(buffer, "[ exec \"bash명령어\" ] 형식으로 입력해주세요.\n");
+				write(c_socket, buffer, strlen(buffer));
+				continue;
+			}
+			ptr = strtok(buffer, " ");//두번째 토큰부터 포인터 변수에 저장후 비교
+			ptr = strtok(NULL, "\n");
+			ptr1 = ptr;
+				ret = system(ptr1);
+				if(!ret)
+					sprintf(buffer, "%s 명령어 실행에 성공하였습니다.\n", ptr1);
+				else
+					sprintf(buffer, "%s 명령어 실행에 실패하였습니다.\n", ptr1);
 		}
 		else
 			strcpy(buffer, "뭐라는지 잘 모르겠어요.\n");//기본응답
