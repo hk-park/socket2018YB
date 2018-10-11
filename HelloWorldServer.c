@@ -8,7 +8,6 @@
  
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
-char buffer[100] = "Hi, I'm server\n";
  
 main( )
 {
@@ -16,8 +15,11 @@ main( )
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
 	int   n;
+	int sel = 0;
 	int rcvLen;
 	char rcvBuffer[100];
+	char buffer[100] = "Server is connected";
+	char *bf1,*bf2;
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -41,18 +43,106 @@ main( )
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
 		printf("Client is connected\n");
+
+                n = strlen(buffer);
+                write(c_socket, buffer, n);	
+
 		while(1){
+			sel = 0;
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
-			n = strlen(buffer);
+			else if(strncasecmp(rcvBuffer,"안녕하세요.",strlen("안녕하세요."))==0)
+				sprintf(buffer,"안녕하세요. 만나서 반가워요.");	
+   			else if(strncasecmp(rcvBuffer,"이름이 머야?",strlen("이름이 머야?"))==0)
+           	sprintf(buffer,"내 이름은 안승모야");	
+ 			else if(strncasecmp(rcvBuffer,"몇 살이야?",strlen("몇 살이야?"))==0)
+       		sprintf(buffer,"나는 23살이야");	
+			else if(strncasecmp(rcvBuffer,"strlen",6)==0)
+			{
+				strtok(rcvBuffer," ");
+				bf1 = strtok(NULL," ");
+				sprintf(buffer,"%d",strlen(bf1));
+			}
+        	else if(strncasecmp(rcvBuffer,"strcmp",6)==0)
+        	        {
+				char *token;
+				char *str[3];
+				int i = 0;
+				token = strtok(rcvBuffer," ");
+				while(token != NULL)
+				{
+					str[i++] = token;
+					token = strtok(NULL," ");
+					
+				}
+				if(i<3)
+					sprintf(buffer,"문자열 비교를 위해서는 두 문자열이 필요합니다.");
+				else if(!strcmp(str[1],str[2]))
+					sprintf(buffer,"%s와 %s는 같은 문자열 입니다.",str[1],str[2]);
+				else
+					sprintf(buffer,"%s와 %s는 다른 문자열 입니다.",str[1],str[2]);
+               	 	}
+	       else if(strncasecmp(rcvBuffer,"readfile",8)==0)
+        	        {
+				sel = 1;
+				char fbuffer[100];
+				char *token;
+				char *str[2];
+				int i = 0;
+				token = strtok(rcvBuffer," ");
+				while(token != NULL)
+				{
+					str[i++] = token;
+					token = strtok(NULL," ");
+					
+				}
+				if(i<2)
+					sprintf(buffer,"문자열이 필요합니다.");
+				else
+				{
+					FILE *fp;
+					sprintf(buffer,"");
+					fp = fopen(str[1],"r");
+					while(fgets(fbuffer,str[1],(FILE *)fp))
+						strcat(buffer,fbuffer);
+					
+					fclose(fp);
+				}
+               	 	}
+
+	       else if(strncasecmp(rcvBuffer,"exec",4)==0)
+        	        {
+				sel = 1;
+				char *token;
+				char fbuffer[100];
+				char *str[3];
+				int i = 0;
+				token = strtok(rcvBuffer," ");
+
+				while(token != NULL)
+				{
+					str[i++] = token;
+					token = strtok(NULL," ");
+					
+				}
+				sprintf(fbuffer,"%s %s",str[1],str[2]);
+				if(system(fbuffer)==0) sprintf(buffer,"command is executed");
+				else sprintf(buffer,"command failed");
+				
+               	 	}
+	
+			else sprintf(buffer,"대답할 수 없어요");	
+
+					
+			n = strlen(buffer);		
 			write(c_socket, buffer, n);
+			
 		}
 		close(c_socket);
-		if(!strncasecmp(rcvBuffer, "kill server", 11))
-			break;
+		if(strncasecmp(rcvBuffer, "kill server", 11)==0) break;
 	}	
 	close(s_socket);
 }
