@@ -49,34 +49,37 @@ main( )
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
-			else if(strcmp(rcvBuffer,"안녕하세요.")==0){
-				strcpy(msg_buffer, "안녕하세요, 만나서 반가워요.\n"); write(c_socket, msg_buffer, strlen(msg_buffer)); 
+			else if(!strcmp(rcvBuffer,"안녕하세요.",strlen("안녕하세요."))){
+			//두개의 인자 값의 차이가 없으면 0으로 리턴됨. = (strcmp(rcvBuffer, "안녕하세요.", strlen("안녕하세요."))==0)
+				strcpy(msg_buffer, "안녕하세요, 만나서 반가워요.\n"); 
 			}
-			else if(strcmp(rcvBuffer,"이름이 뭐야?")==0){
-				strcpy(msg_buffer, "내 이름은 한미수야\n."); write(c_socket, msg_buffer, strlen(msg_buffer));
+			else if(!strcmp(rcvBuffer,"이름이 뭐야?",strlen("이름이 뭐야?")))
+				strcpy(msg_buffer, "내 이름은 한미수야\n.");
+			
+			else if(!strcmp(rcvBuffer,"몇살이야?",strlen("몇살이야?")))
+				strcpy(msg_buffer, "나는 21살이야.\n");
+			
+			else if(!strncasecmp(rcvBuffer, "strlen ", 7)){ //공백이 올지몰라 공백 포함 7바이트
+				sprintf(buffer, "내 문자열의 길이는 %d입니다.", strlen(rcvBuffer)-7);
 			}
-			else if(strcmp(rcvBuffer,"몇살이야?")==0){
-				strcpy(msg_buffer, "나는 21살이야.\n"); write(c_socket, msg_buffer, strlen(msg_buffer));
-			}
-			else if(strncasecmp(rcvBuffer, "strlen ", 7)==0){
-				int client_msg_len=0;
-				char *Strtok=strtok(rcvBuffer," ");
-				while(Strtok != NULL){
-					client_msg_len += strlen(Strtok)+1;
-					Strtok=strtok(NULL," ");
+			else if(!strncasecmp(rcvBuffer, "strcmp ", 7)){
+				char *token;
+				char *str[3]; //포인팅한 것을 저장하는 공간
+				int i=0;
+				token=strtok(rcvBuffer, " ");
+				while(token != NULL){
+					str[i++]=token;
+					token=strtok(NULL, " ");
 				}
-				client_msg_len -= 8;
-				sprintf(send_buffer, "%d\n", client_msg_len);
-				write(c_socket, send_buffer, strlen(send_buffer));
+				if(i<3)
+					sprintf(buffer, "문자열 비교를 위해서는 두 문자열이 필요합니다.");
+				else if(!strcmp(str[1]. str[2])) //같은 문자열이면
+					sprintf(buffer, "%s와 %s는 같은 문자열입니다.", str[1], str[2]);
+				else
+					sprintf(buffer, "%s와 %s는 다른 문자열입니다.", str[1], str[2]);
 			}
-			else if(strncasecmp(rcvBuffer, "strcmp ", 7)==0){
-				strtok(rcvBuffer, " ");
-				char *str1=strtok(NULL," ");
-				char *str2=strtok(NULL," ");
-				int strn=strcmp(str1,str2);
-				sprintf(send_buffer, "%d\n", strn);
-				write(c_socket, send_buffer, strlen(send_buffer));
-			}
+			else
+				strcpy(buffer, "무슨 말인지 모르겠습니다.");
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
 		}
