@@ -9,8 +9,7 @@
  
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
-char buffer[100] = "Hi, I'm server\n";
-char server_msg_buffer[100];
+char buffer[1024] = "Hi, I'm server\n";
 main( )
 {
 	int   c_socket, s_socket;
@@ -50,35 +49,63 @@ main( )
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
 			else if(strcmp(rcvBuffer,"안녕하세요") == 0){
-				strcpy(server_msg_buffer ,"안녕하세요. 만나서 반가워요.");
-				write(c_socket,server_msg_buffer,strlen(server_msg_buffer));
+				strcpy(buffer ,"안녕하세요. 만나서 반가워요.");
 			}
 			else if(strcmp(rcvBuffer,"이름이 뭐야?") == 0){
-				strcpy(server_msg_buffer, "내 이름은 이선룡이야");
-				write(c_socket, server_msg_buffer, strlen(server_msg_buffer));
+				strcpy(buffer, "내 이름은 이선룡이야");
 			}
 			else if(strcmp(rcvBuffer,"몇살이야?") == 0){
-				strcpy(server_msg_buffer, "나는 24살이야");
-				write(c_socket, server_msg_buffer, strlen(server_msg_buffer));
+				strcpy(buffer, "나는 24살이야");
 			}
-			else if(strncasecmp(rcvBuffer, "strlen ", 7) == 0){
-				int client_msg_len = 0;
-				char *pStrtok = strtok(rcvBuffer, " ");
-				while(pStrtok != NULL){
-					client_msg_len += strlen(pStrtok) + 1;
-					pStrtok = strtok(NULL, " ");
-				}
-				client_msg_len -= 8;
-				sprintf(send_buffer, "%d\n", client_msg_len);
-				write(c_socket, send_buffer, strlen(send_buffer));	
+			else if(!strncasecmp(rcvBuffer, "strlen ", strlen("strlen "))){
+				sprintf(buffer,"내 문자열의 길이는 %d입니다", strlen(rcvBuffer) - strlen("strlen "));
 			}
 			else if(strncasecmp(rcvBuffer, "strcmp ", 7) == 0){
-				strtok(rcvBuffer, " ");
-				char *str1 = strtok(NULL, " ");
-				char *str2 = strtok(NULL, " ");
-				int ret = strcmp(str1, str2);
-				sprintf(send_buffer, "%d\n", ret);
-				write(c_socket, send_buffer, strlen(send_buffer));
+				char *token;
+				char *str[3];
+				int i=0;
+				token = strtok(rcvBuffer, " ");
+				
+				while(token != NULL){
+					str[i++] = token;
+					token = strtok(NULL, " ");
+				}
+				if(i<3)
+					sprintf(buffer, "두개의 문자열을 입력해주세요");
+				else
+					sprintf(buffer, "%d\n", strcmp(str[1], str[2]));
+			}
+			else if(strncasecmp(rcvBuffer, "fileread ",7) == 0){
+				char *token;
+				token = strtok(rcvBuffer, " ");
+				strcpy(buffer,"");
+				do{
+					FILE *fp;
+					char fileBuffer[255];
+					token = strtok(NULL, " ");
+					if(token == NULL)break;
+					fp = fopen(token,"r");
+					if(fp){
+						while(fgets(fileBuffer,255,fp)){
+							strcat(buffer,fileBuffer);
+						}
+					}
+					else{
+						sprintf(fileBuffer,"%s 파일을 여는데 실패했습니다.\n",token);
+						strcat(buffer,fileBuffer);
+					}
+				}while(token!=NULL);
+			}
+			else if(strncasecmp(rcvBuffer, "exec ",5) == 0){
+				char *token;
+				strcpy(command,"");
+				token = strtok(rcvBuffer, " ");
+				token = strtok(NULL, "\0");
+				system(token);
+				strcpy(buffer,token);
+			}
+			else {
+				sprintf(buffer ,"다시 입력해 주세요");
 			}
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
