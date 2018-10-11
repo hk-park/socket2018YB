@@ -47,16 +47,75 @@ main( )
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
 //5-1
-                        if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요")))
+                        else if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요")))
                                 strcpy(buffer, "안녕하세요. 만나서 반가워요");
 //5-2
 			
-			if(!strncmp(rcvBuffer, "이름이 머야?", strlen("이름이 머야?")))
+			else if(!strncmp(rcvBuffer, "이름이 머야?", strlen("이름이 머야?")))
                                 strcpy(buffer, "내 이름은 ooo야.");	
 			
-			if(!strncmp(rcvBuffer, "몇 살이야?", strlen("몇 살이야?")))
-				strcpy(buffer, "나는 21살이야");  	
+			else if(!strncmp(rcvBuffer, "몇 살이야?", strlen("몇 살이야?")))
+				strcpy(buffer, "나는 21살이야");
+
+//5-3.1
+			else if(!strncasecmp(rcvBuffer, "strlen ", 7))
+			 sprintf(buffer, "내 문자열의 길이는 %d입니다.", strlen(rcvBuffer)-7);
+//5-3.2			
+			else if(!strncasecmp(rcvBuffer, "strcmp ", 7)){ 
+				char *token1;
+				char *str1[3];
+				int i = 0;
+				token1 = strtok(rcvBuffer, " ");
+				while(token1 !=NULL){
+					str1[i++] = token1;
+					token1 = strtok(NULL, " ");
+				 }
+				if(i<3)
+					sprintf(buffer, "문자열 비교를 위해서는 두 문자열이 필요합니다.");
+				else if(!strcmp(str1[1], str1[2])) //같은 문자열이면
+					sprintf(buffer, "%s와 %s는 같은 문자열입니다.", str1[1], str1[2]);
+				else
+					sprintf(buffer, "%s와 %s는 다른 문자열입니다.", str1[1], str1[2]);
+			}else
+				sprintf(buffer, "무슨 말일지 모르겠습니다.");
+//6-1			
+			if(!strncasecmp(rcvBuffer, "readfile ", 9)){
+				FILE *fp;
+				char *token2;
+				char *str2[2];
+				char buffer1[100] ={0,};
+				int i = 0;
+				token2 = strtok(rcvBuffer, " ");
+				while(token2 != NULL){
+					str2[i++] = token2;
+					token2 = strtok(NULL, " ");
+				}
+				fp = fopen(str2[1], "r");
+				if(fp){
+					while(fgets(buffer, 100, (FILE *)fp))
+						sprintf(buffer,"%s", strcat(buffer1,buffer));
+				}
+				fclose(fp);
+			}
+			if(!strncasecmp(rcvBuffer, "exec ", 5)){
+                                char *token3;
+                                char *str3[2];
+                                int ret;
+                                token3 = strtok(rcvBuffer, " ");
+                                while(token3 != NULL){
+                                        str3[i++] = token3;
+                                        token3 = strtok(NULL, " ");
+                                }
+				ret = system(str3[1]);
+				if(!ret)//ret가 0이면
+					strcpy(buffer, "command Success");
+				else
+					strcpy(buffer, "command Failed");
 			
+			}
+			n = strlen(buffer);
+			write(c_socket, buffer, n);
+/*
 //5-3_2
  			if(!strncasecmp(rcvBuffer,"strcmp",6)){
                                 strcpy(buffer, rcvBuffer);
@@ -73,7 +132,8 @@ main( )
                         }
 
 //5-3_1
-			if(!strncasecmp(rcvBuffer,"strlen",6)){
+			else if(!strncasecmp(rcvBuffer,"strlen",6)){
+				//sprintf(buffer, "내 문자열의 길이는 %d입니다.", strlen(rcvBuffer)-7);
 				strcpy(buffer, rcvBuffer);
 				char *str[MAX]; 
 				str[0] = strtok(buffer, " ");
@@ -86,6 +146,7 @@ main( )
 				n = strlen(buffer);
 				write(c_socket, buffer, n);
 			}
+*/
 		}		
 
 		close(c_socket);
