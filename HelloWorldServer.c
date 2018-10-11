@@ -16,7 +16,9 @@ main( )
         struct sockaddr_in s_addr, c_addr;
         int   len;
         int   n,a,x;
+	FILE *fp;
         int rcvLen;
+	char buffer2[100];
         char rcvBuffer[100],*jdy1,*jdy2;
         char jdyBuffer[100] = " ";
 
@@ -46,6 +48,7 @@ main( )
                 while(1){
                         rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
                         rcvBuffer[rcvLen] = '\0';
+			buffer[0] ='\0';
                         printf("[%s] received\n", rcvBuffer);
                         if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
                         {
@@ -76,6 +79,7 @@ main( )
                          sprintf(buffer,"길이 : %d",a);
                          write(c_socket, buffer,strlen(buffer));
                         }
+
                         else if (!strncasecmp(rcvBuffer,"strcmp ",7))
                         {
                           strtok(rcvBuffer," ");
@@ -87,7 +91,40 @@ main( )
                           write(c_socket,buffer,strlen(buffer));
 
                         }
-                        else{
+
+			else if (!strncasecmp(rcvBuffer,"readfile",8))
+			{
+				strtok(rcvBuffer," ");
+				jdy1 = strtok(NULL," ");
+				jdy2 = jdy1;
+				fp=fopen(jdy2,"r");	
+				
+				if(fp)
+				{
+					while(fgets(buffer2,100,(FILE *)fp))
+						strcat(buffer, buffer2);
+				}
+				fclose(fp);
+				write(c_socket,buffer,strlen(buffer));
+
+			}
+
+			else if (!strncasecmp(rcvBuffer,"exec",4))
+					{
+
+							strtok(rcvBuffer," ");
+							jdy1 = strtok(NULL," ");
+							jdy2 = jdy1;
+							int ret = system(jdy2);
+							
+							if(!ret)
+							  sprintf(buffer,"%s,command is Success",jdy2);
+							else
+							  sprintf(buffer,"%s,command is failed",jdy2);
+
+						
+					}
+	                    else{
                         n =strlen(buffer);
                         write(c_socket, jdyBuffer, n);
                         }
@@ -99,23 +136,7 @@ main( )
         }
         close(s_socket);
 }
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-~                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                          36,2-9       모두
+
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
