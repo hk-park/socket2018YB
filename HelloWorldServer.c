@@ -4,6 +4,7 @@
 #include <string.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
+#define BUFSIZ 10000
 //#define PORT 10000
  
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
@@ -18,7 +19,7 @@ main( )
 	int sel = 0;
 	int rcvLen;
 	char rcvBuffer[100];
-	char buffer[100] = "Server is connected";
+	char buffer[BUFSIZ] = "Server is connected";
 	char *bf1,*bf2;
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
@@ -88,7 +89,7 @@ main( )
 	       else if(strncasecmp(rcvBuffer,"readfile",8)==0)
         	        {
 				sel = 1;
-				char fbuffer[100];
+				char fbuffer[BUFSIZ];
 				char *token;
 				char *str[2];
 				int i = 0;
@@ -117,7 +118,7 @@ main( )
         	        {
 				sel = 1;
 				char *token;
-				char fbuffer[100];
+				char fbuffer[BUFSIZ];
 				char *str[3];
 				int i = 0;
 				token = strtok(rcvBuffer," ");
