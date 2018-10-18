@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <string.h>
 
-#define PORT 9000
+#define PORT 10000
 #define IPADDR "127.0.0.1"
 
 int main(){
@@ -31,7 +31,6 @@ int main(){
 		write(c_socket, sendBuffer, strlen(sendBuffer));
 		if(strncasecmp(sendBuffer, "quit", 4) == 0 || strncasecmp(sendBuffer, "kill server", 11) == 0)
 			break;
- 
 		n = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 		if(n < 0){
 			printf("[ERR] Cannot read\n");
