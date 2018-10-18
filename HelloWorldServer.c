@@ -5,10 +5,11 @@
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
 //#define PORT 10000
- 
+
+#define BUFSIZE 10000 
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
-char buffer[100] = "Hi, I'm server\n";
+char buffer[BUFSIZE] = "Hi, I'm server\n";
  
 main( )
 {
@@ -17,7 +18,7 @@ main( )
 	int   len;
 	int   n;
 	int rcvLen;
-	char rcvBuffer[100];
+	char rcvBuffer[BUFSIZE];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -42,6 +43,9 @@ main( )
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
 		printf("Client is connected\n");
 		while(1){
+			char *token;
+			char *str[3];
+			int i=0;
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
 			printf("[%s] received\n", rcvBuffer);
@@ -64,9 +68,6 @@ main( )
 			}
 			//
 			else if(!strncasecmp(rcvBuffer, "strcmp ", 7)) {
-				char *token;
-				char *str[3];
-				int i = 0;
 				token = strtok(NULL, " ");
 				while(token != NULL) {
 					str[i++] = token;
@@ -82,30 +83,40 @@ main( )
 			}
 			//예제 6-1
 			else if(!strncasecmp(rcvBuffer, "readfile ", 9)) {
-				FILE *fp;
-				char buffer[100];
-				char *token;
-				strtok(rcvBuffer, " ");
-				token = strtok(NULL, " ");		
-
-        			fp = fopen(token, "r");
-        			if(fp) {
-                			while(fgets(buffer, 100, (FILE *)fp))
-                				printf("%s", buffer);
-       				 }
-        			fclose(fp);
+				i=0;
+				token = strtok(rcvBuffer, " ");
+				while(token != NULL) {
+					str[i++] = token;
+					token = strtok(NULL, " ");
+				}
+				//str[0] = readfile
+				//set[1] = filename
+				if (i<2)
+					sprintf(buffer, "readfile 기능을 사용하기 위해서는 readfile <파일명> 형태로 입력하시오.");
+				FILE *fp = fopen(str[1], "r");
+				if(fp) {
+					char tempStr[BUFSIZE];
+					memset(buffer, 0, BUFSIZE);
+                			while(fgets(tempStr, BUFSIZE, (FILE *)fp))
+                				strcat(buffer, tempStr);
+					fclose(fp);
+       				 } 
+				else
+        				sprintf(buffer, "파일이 없습니다.");
 			}
 			//예제 6-2
 			else if(!strncasecmp(rcvBuffer, "exec ", 5)) {
-				char *token;
-                                strtok(rcvBuffer, " ");
-                                token = strtok(NULL, "\0");
-				
-				int ret = system(token);
-				if(!ret)
-                			printf("command Success!\n");
+				char *command;
+				token = strtok(rcvBuffer, " ");
+				//명령어 안에 공백이 있을 수 있기 때문에 문자열 끝까지 읽기
+				command = strtok(NULL, "\0");
+				printf("command : %s \n", command);				
+
+				int result = system(command);
+				if(!result)
+					sprintf(buffer, "[%s] 명령어가 성공하였습니다.", command);
         			else
-                			printf("command Failed\n");
+                			sprintf(buffer, "[%s] 명령어가 실패하였습니다.", command);
 			}
 			else
 				strcpy(buffer, "무슨 말인지 모르겠습니다.");
