@@ -3,11 +3,11 @@
 #include <sys/socket.h>
 #include <string.h>
 #define PORT 10000
-
-char Hbuffer[100] = "안녕하세요. 만나서 반가워요\n";
-char Nbuffer[100] = "내 이름은 유요섭이야.\n";
-char Abuffer[100] = "나는 21살이야.\n";
-char nothing[100] = "아무것도 아님\n";
+#define BUFSIZE 10000
+char Hbuffer[BUFSIZE] = "안녕하세요. 만나서 반가워요\n";
+char Nbuffer[BUFSIZE] = "내 이름은 유요섭이야.\n";
+char Abuffer[BUFSIZE] = "나는 21살이야.\n";
+char nothing[BUFSIZE] = "아무것도 아님\n";
  
 main( )
 {
@@ -17,7 +17,7 @@ main( )
 	int   len;
 	int   n, i, x;
 	int rcvLen;
-	char rcvBuffer[100], *ptr,  *ptr1, *ptr2, buffer[100], fbuffer[100];
+	char rcvBuffer[BUFSIZE], *ptr,  *ptr1, *ptr2, buffer[BUFSIZE], fbuffer[BUFSIZE];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -80,7 +80,7 @@ main( )
 				ptr1 = ptr;
 				fp = fopen(ptr1, "r");
 				if(fp){
-					while(fgets(fbuffer, 100, (FILE *)fp))
+					while(fgets(fbuffer, BUFSIZE, (FILE *)fp))
 							strcat(buffer, fbuffer);
 				}
 				else{
