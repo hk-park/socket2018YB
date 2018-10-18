@@ -5,11 +5,11 @@
 #include <malloc.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 10000
-#define MAX 100
+#define BUFSIZE 10000
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
-char buffer[MAX] = "Hi, I'm server\n";
-char msg_buffer[MAX];
+char buffer[BUFSIZE];
+
  
 main( )
 {
@@ -18,8 +18,7 @@ main( )
 	int   len;
 	int   n;
 	int rcvLen;
-	char rcvBuffer[MAX];
-	char *send_buffer=(char*)malloc(sizeof(char)*100);
+	char rcvBuffer[BUFSIZE];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	char *token;
         int i=0;
@@ -46,6 +45,9 @@ main( )
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
 		printf("Client is connected\n");
 		while(1){
+			char *token;
+			char *str[3];
+			i=0;
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
 			printf("[%s] received\n", rcvBuffer);
@@ -53,59 +55,65 @@ main( )
 				break;
 			else if(!strncmp(rcvBuffer,"안녕하세요.",strlen("안녕하세요."))){
 			//두개의 인자 값의 차이가 없으면 0으로 리턴됨. = (strcmp(rcvBuffer, "안녕하세요.", strlen("안녕하세요."))==0)
-				strcpy(msg_buffer, "안녕하세요, 만나서 반가워요.\n"); 
+				strcpy(buffer, "안녕하세요, 만나서 반가워요.\n"); 
 			}
 			else if(!strncmp(rcvBuffer,"이름이 뭐야?",strlen("이름이 뭐야?")))
-				strcpy(msg_buffer, "내 이름은 한미수야\n.");
+				strcpy(buffer, "내 이름은 임정인이야\n.");
 			
 			else if(!strncmp(rcvBuffer,"몇살이야?",strlen("몇살이야?")))
-				strcpy(msg_buffer, "나는 21살이야.\n");
+				strcpy(buffer, "나는 22살이야.\n");
 			
 			else if(!strncasecmp(rcvBuffer, "strlen ", 7)){ //공백이 올지몰라 공백 포함 7바이트
 				sprintf(buffer, "내 문자열의 길이는 %d입니다.", strlen(rcvBuffer)-7);
 			}
-			else if(!strncasecmp(rcvBuffer, "strcmp ", 7)){
-				char *str[3]; //포인팅한 것을 저장하는 공간
+			else if(!strncasecmp(rcvBuffer, "strcmp ", 9)){
 				i=0;
 				token=strtok(rcvBuffer, " ");
 				while(token != NULL){
 					str[i++]=token;
 					token=strtok(NULL, " ");
 				}
-				if(i<3)
-					sprintf(buffer, "문자열 비교를 위해서는 두 문자열이 필요합니다.");
+				if(i<2)
+		sprintf(buffer, "문자열 비교를 위해서는 두 문자열이 필요합니다.");
 				else if(!strcmp(str[1],str[2]))
 					sprintf(buffer, "%s와 %s는 같은 문자열입니다.", str[1], str[2]);
 				else
 					sprintf(buffer, "%s와 %s는 다른 문자열입니다.", str[1], str[2]);
 			}
 			else if(!strncasecmp(rcvBuffer, "readfile ", 9)){
-				FILE *fp;
-				char *rstr[2];
 				i=0;
 				token=strtok(rcvBuffer, " ");
 				while(token != NULL){
-					rstr[i++]=token;
+					str[i++]=token;
 					token=strtok(NULL, " ");
 				}
-				
-				fp=fopen(rstr[1],"r");
+				if(i<2)//파일이름이 없을때
+	sprintf(buffer,"readfile 기능을 사용하기 위해서는 readfile<파일명> 형태로 입력해주세요");				
+			FILE*fp=fopen(str[1],"r");
 				if(fp){
-					while(fgets(buffer, 100, (FILE *)fp))
-						printf("%s", buffer);
+					char tempStr[BUFSIZE];
+					memset(buffer,0,BUFSIZE);
+					while(fgets(tempStr,BUFSIZE, (FILE *)fp)){
+						strcat(buffer,tempStr);
 				}
 				fclose(fp);
 			}
-			else if(!strncasecmp(rcvBuffer, "exec", 4)){
-				char *estr;
-				i=0;
+				else{
+					sprintf(buffer,"파일이 없습니다.");
+				     }
+				
+			}
+			else if(!strncasecmp(rcvBuffer, "exec", 5)){
+				char *command;
 				token=strtok(rcvBuffer, " ");
-				estr=strtok(NULL,"\0");
-				int ret=system(estr);
-				if(!ret)
-					printf("command Success!!\n");
-				else
-					printf("command Failed!!\n");
+				command=strtok(NULL,"\0");
+				printf("command: %s\n",command);
+				int result=system(command);
+				if(result)
+		sprintf(buffer,"[%s] 명령어가 실패하였습니다", command);
+else
+		sprintf(buffer,"[%s] 명령어가 성공하였습니다", command);
+
 			}
 			else
 				strcpy(buffer, "무슨 말인지 모르겠습니다.");
