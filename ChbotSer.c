@@ -3,8 +3,9 @@
 #include <sys/socket.h>
 #include <string.h>
 #define PORT 8000
+#define BUFSIZE 10000
 
-char buffer[100]; 
+char buffer[BUFSIZE]; 
 
 main( )
 {
@@ -13,9 +14,11 @@ main( )
 	int   len;
 	int   n;
 	int rcvLen;
-	char rcvBuffer[100];
+	char rcvBuffer[BUFSIZE];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
-	
+	FILE *fp;
+	char buffer2[BUFSIZE];
+
 	memset(&s_addr, 0, sizeof(s_addr));
 	s_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	s_addr.sin_family = AF_INET;
@@ -36,44 +39,15 @@ main( )
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		printf("Client is connected\n");
 		while(1){
+                        char *token;
+                        char *str[2];
+                        int i = 0;
+
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
 			printf("[%s] received\n", rcvBuffer);
 
-			if(!strncasecmp(rcvBuffer, "open", 4)) {
-				FILE *fp;
-				char buffer2[100];
-
-				fp = fopen("test.txt", "r");
-				if(fp) {
-					while(fgets(buffer, 100, (FILE *)fp)) {
-						n = strlen(buffer);
-						write(c_socket, buffer, n);
-					}
-				}
-				fclose(fp);
-			}
-			else if(!strncasecmp(rcvBuffer, "exec", 4)) {
-				char *token;
-				char *str[2];
-				int i = 0;
-				int ret;
-				token = strtok(rcvBuffer, " ");
-
-				while(token != NULL) {
-					str[i++] = token;
-					token = strtok(NULL, " ");
-				}
-				if(!strcmp(str[1], "mkdir"))
-					ret = system("mkdir testdir");
-				else if(!strcmp(str[1], "ls"))
-					ret = system("ls > list.txt");
-				if(!ret)
-					strcpy(buffer, "Command Success!!\n");
-				else
-					strcpy(buffer, "Command Failed!!!\n");
-			}
-			else if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
+			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
 			else if(!strncasecmp(rcvBuffer, "hi", 2)) {
 				strcpy(buffer, "Hi. nice to meet you.");
@@ -106,13 +80,59 @@ main( )
 					sprintf(buffer, "String[1] : %s\tString[2] : %s\tNOT Equal!!", str[1], str[2]);
 				}
 			}
-			else {
-				strcpy(buffer, "Sorry. I don't Understand..");
+                        else if(!strncasecmp(rcvBuffer, "open", 4)) {
+                                fp = fopen("test.txt", "r");
+                                if(fp) {
+                                        while(fgets(buffer, BUFSIZE, (FILE *)fp)) {
+                                                n = strlen(buffer);
+                                                write(c_socket, buffer, n);
+                                        }
+                                }
+                                fclose(fp);
+                        }
+                        else if(!strncasecmp(rcvBuffer, "exec ", 5)) {
+                                char *command;
+                                token = strtok(rcvBuffer, " ");
+				command = strtok(NULL, "\n");
+				printf("command : %s\n", command);
+
+                                int ret = system(command);
+                                if(!ret)
+                                        sprintf(buffer, "[%s] Command Success!!\n", command);
+                                else
+                                        sprintf(buffer, "[%s] Command Failed!!!\n", command);
+                        }
+
+                        else if (!strncasecmp(rcvBuffer, "readfile ", 9)) {
+                                i = 0;
+                                token = strtok(rcvBuffer, " ");
+                                while(token != NULL) {
+                                        str[i++] = token;
+                                        token = strtok(NULL, " ");
+                                }
+                                if(i < 2)
+                                        sprintf(buffer, "[ERR] cannot read. readfile <filename> ");
+
+                                FILE *fp = fopen(str[1], "r");
+                                if(fp) {
+                                        char tempStr[BUFSIZE];
+                                        memset(buffer, 0, BUFSIZE);
+                                        while(fgets(tempStr, BUFSIZE, (FILE*)fp)) {
+                                                strcat(buffer, tempStr);
+                                        }
+                                        fclose(fp);
+                                }
+                                else {
+                                        sprintf(buffer, "not Exist FILE");
+                                }
+                        }
+                        else {
+                                strcpy(buffer, "Sorry. I don't Understand..");
 			}
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
 		}
-		close(c_socket);
+               		close(c_socket);
 		if(!strncasecmp(rcvBuffer, "kill server", 11))
 			break;
 	}	
