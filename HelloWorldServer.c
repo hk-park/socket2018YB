@@ -5,11 +5,9 @@
 #include <malloc.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 10000
-#define MAX 100
+#define MAX 10000
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
-//char buffer[100] = "hello, world\n";
-char buffer[MAX] = "Hi, I'm server\n";
-char msg_buffer[MAX];
+char buffer[MAX];
  
 main( )
 {
@@ -19,7 +17,6 @@ main( )
 	int   n;
 	int rcvLen;
 	char rcvBuffer[MAX];
-	char *send_buffer=(char*)malloc(sizeof(char)*100);
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	char *token;
         int i=0;
@@ -53,13 +50,13 @@ main( )
 				break;
 			else if(!strncmp(rcvBuffer,"안녕하세요.",strlen("안녕하세요."))){
 			//두개의 인자 값의 차이가 없으면 0으로 리턴됨. = (strcmp(rcvBuffer, "안녕하세요.", strlen("안녕하세요."))==0)
-				strcpy(msg_buffer, "안녕하세요, 만나서 반가워요.\n"); 
+				strcpy(buffer, "안녕하세요, 만나서 반가워요.\n"); 
 			}
 			else if(!strncmp(rcvBuffer,"이름이 뭐야?",strlen("이름이 뭐야?")))
-				strcpy(msg_buffer, "내 이름은 한미수야\n.");
+				strcpy(buffer, "내 이름은 한미수야\n.");
 			
 			else if(!strncmp(rcvBuffer,"몇살이야?",strlen("몇살이야?")))
-				strcpy(msg_buffer, "나는 21살이야.\n");
+				strcpy(buffer, "나는 21살이야.\n");
 			
 			else if(!strncasecmp(rcvBuffer, "strlen ", 7)){ //공백이 올지몰라 공백 포함 7바이트
 				sprintf(buffer, "내 문자열의 길이는 %d입니다.", strlen(rcvBuffer)-7);
@@ -88,12 +85,16 @@ main( )
 					rstr[i++]=token;
 					token=strtok(NULL, " ");
 				}
-				
+				if(i<2)
+					sprintf(buffer, "readfile 기능을 사용하기 위해서는 readfile <파일명> 형태로 입력하시오.");	
 				fp=fopen(rstr[1],"r");
 				if(fp){
+					memset(buffer, 0, 100);
 					while(fgets(buffer, 100, (FILE *)fp))
 						printf("%s", buffer);
 				}
+				else
+					sprintf(buffer, "파일이 존재하지 않습니다.");
 				fclose(fp);
 			}
 			else if(!strncasecmp(rcvBuffer, "exec", 4)){
@@ -103,9 +104,9 @@ main( )
 				estr=strtok(NULL,"\0");
 				int ret=system(estr);
 				if(!ret)
-					printf("command Success!!\n");
+					sprintf(buffer, "[%s] command Success!!\n");
 				else
-					printf("command Failed!!\n");
+					sprintf(buffer, "[%s] command Failed!!\n");
 			}
 			else
 				strcpy(buffer, "무슨 말인지 모르겠습니다.");
