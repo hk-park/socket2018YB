@@ -3,12 +3,12 @@
 #include <sys/socket.h>
 #include <string.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
-//#define PORT 9000
-#define PORT 10000
- 
+//#define PORT 10000
+#define PORT 9000
+#define BUFSIZE 10000
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
-char buffer[100];
+char buffer[BUFSIZE];
 main( )
 {
 	int   c_socket, s_socket, c_strlen;
@@ -86,7 +86,7 @@ while(1){
 		else if(!strncasecmp(buffer, "readfile", 8)){ //6-1 챗봇 기능추가
 				char *token;
 				char *str[2];
-				char tempbuffer[100];
+				char tempbuffer[BUFSIZE];
 				int i = 0;
 				FILE *fp=NULL;
 				token = strtok(buffer, " ");
@@ -101,11 +101,12 @@ while(1){
 				}
 				str[1][strlen(str[1]) - 1] = '\0'; //토큰의 개행문자 제거
 				fp = fopen( str[1], "r");
-				buffer[0]='\0';
+				//buffer[0]='\0';
 				if(fp){
-
-						while(fgets(tempbuffer, 100, (FILE *)fp))
-						strcat(buffer,tempbuffer);
+						memset(buffer, 0, BUFSIZE); //버퍼 초기화
+						while(fgets(tempbuffer, BUFSIZE, (FILE *)fp))
+							strcat(buffer,tempbuffer);
+						fclose(fp);//파일닫기				
 				}
 				else
 					strcpy(buffer, "파일을 찾을 수 없습니다.\n");
