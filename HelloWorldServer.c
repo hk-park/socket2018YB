@@ -5,12 +5,10 @@
 #include <string.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
-//#define PORT 10000
  
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
-//char buffer[100] = "hello, world\n";
 char buffer[1024] = "Hi, I'm server\n";
-main( )
+int main( )
 {
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
@@ -19,8 +17,14 @@ main( )
 	int rcvLen;
 	char *send_buffer = (char*)malloc(sizeof(char)*100);
 	char rcvBuffer[100];
+
+
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
-	
+/* PF_INET :IPv4 인터넷 프로토콜 페밀리 
+ * SOCK_STREAM : 스트림 소캣
+ * 0 : 디폴트 프로토콜 사용 TCP or UDP
+ */
+
 	memset(&s_addr, 0, sizeof(s_addr));
 	//s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	s_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -31,11 +35,18 @@ main( )
 		printf("Can not Bind\n");
 		return -1;
 	}
+/* s_scoket : 서버 소켓
+ * (struct sockaddr *) &s_addr :서버 정보
+ * sizeof(s_addr) : sockaddr 메모리 크기
+ */
  
 	if(listen(s_socket, 5) == -1) {
 		printf("listen Fail\n");
 		return -1;
 	}
+/* s_socket :서버 소캣
+ * 최대 클라이언트 
+ */
  	
 	while(1) {
 		len = sizeof(c_addr);
@@ -43,8 +54,8 @@ main( )
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
 		printf("Client is connected\n");
 		while(1){
-			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
-			rcvBuffer[rcvLen] = '\0';
+			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer)); //c_socket수신버퍼에서 len마큼 rcvBuffer로 가져오다.
+			rcvBuffer[rcvLen] = '\0'; //마지막 문자는 NULL문자로
 			printf("[%s] received\n", rcvBuffer);
 			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
 				break;
