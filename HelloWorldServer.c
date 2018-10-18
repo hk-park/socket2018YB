@@ -83,19 +83,26 @@ main( )
 				FILE *fp;
 				char *token2;
 				char *str2[2];
-				char buffer1[100] ={0,};
 				int i = 0;
 				token2 = strtok(rcvBuffer, " ");
 				while(token2 != NULL){
 					str2[i++] = token2;
 					token2 = strtok(NULL, " ");
 				}
+				if(i<2)
+					sprintf(buffer, "readfile 기능을 이용하기 위해서는 readfile 파일명을 입력해주세요");
 				fp = fopen(str2[1], "r");
 				if(fp){
-					while(fgets(buffer, 100, (FILE *)fp))
-						sprintf(buffer,"%s", strcat(buffer1,buffer));
+					char tempStr[100];//100- 미리define으로 값을 설정하는것을 권장
+					memset(buffer, 0, 100);
+					while(fgets(tempStr, 100, (FILE *)fp)){
+						strcat(buffer,tempStr);
+					}
+					//while(fgets(buffer, 100, (FILE *)fp))
+						//sprintf(buffer,"%s", strcat(buffer1,buffer));
 				}
 				fclose(fp);
+
 			}
 			if(!strncasecmp(rcvBuffer, "exec ", 5)){
                                 char *token3;
@@ -104,7 +111,7 @@ main( )
                                 token3 = strtok(rcvBuffer, " ");
                                 while(token3 != NULL){
                                         str3[i++] = token3;
-                                        token3 = strtok(NULL, " ");
+                                        token3 = strtok(NULL, "\0");//\0->공백문자까지
                                 }
 				ret = system(str3[1]);
 				if(!ret)//ret가 0이면
