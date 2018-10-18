@@ -4,6 +4,7 @@
 #include <string.h>
 
 #define PORT 9000
+#define BUFSIZE 10000
 //char buffer[100] = "hello world\n";
 char buffer[BUFSIZ] = "Hi, I'm server\n";
 
@@ -132,12 +133,13 @@ int main(){
 						i++;
 					}
 					tf = system(tempBuffer);
-					strcpy(tempBuffer,clearBuffer);
 					if(tf == 0){
 						sprintf(buffer, "[%s]command is exectued.\n",tempBuffer);
+						strcpy(tempBuffer,clearBuffer);
 					}
 					else{
 						sprintf(buffer, "[%s]command failed.\n",tempBuffer);
+						strcpy(tempBuffer,clearBuffer);
 					}
 				}
 				else {
