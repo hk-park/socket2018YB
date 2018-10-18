@@ -2,6 +2,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <pthread.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
 //#define PORT 10000
@@ -9,16 +10,17 @@
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
 char buffer[BUFSIZE] = "Hi, I'm server\n";
- 
+int numClient=0;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+void *do_service(void *argv);
 main( )
 {	
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
 	int   n;
-	int rcvLen;
 	char rcvBuffer[BUFSIZE];
-
+	int status;
 	pthread_t pthread;
 	int thr_id;
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
@@ -43,43 +45,42 @@ main( )
 		len=sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
-		thr_id=pthread_create(&pthread, NULL, do_service(void *)&c_socket);
-		void *
-		do_service(void *data)
-		{
-			int n;
-			char rvvBuffer[BUFSIZE];	
-			int c_socket= *((int *)data);
-			while(1){
-				if((readSize = read(c_socket,rcvBuffer,sizeof(rcvBuffer))<0)){
-				}
-			}
+		pthread_mutex_lock(&mutex);
+		numClient++;
+		pthread_mutex_unlock(&mutex);
+		printf("%dth client is connected\n",numClient);
+		status=pthread_create(&pthread, NULL, do_service, (void *)&c_socket);
 		}
-		printf("Client is connected\n");
-		
-			char *token;
-			char *str[3];
-			int i=0;
-			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
-			rcvBuffer[rcvLen] = '\0';
-			printf("[%s] received\n", rcvBuffer);
-			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
-				break;
-			else if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요"))){
-                        	strcpy(buffer,"안녕하세요.만나서반가워요");
-			}
-			else if(!strncmp(rcvBuffer, "이름이뭐야?", strlen("이름이뭐야?"))){
-                       		strcpy(buffer,"최우석이야");
-			}
-                     
-			else if(!strncmp(rcvBuffer, "몇살이야?", strlen("몇살이야?"))){
-				strcpy(buffer,"23살이야");
-			}
-			else if(!strncasecmp(rcvBuffer,"strlen ", 7)){
-				
-				sprintf(buffer,"내문자열의 길이는 %d입니다\\n", strlen(rcvBuffer)-7);
-			}
-			else if(!strncasecmp(rcvBuffer,"strcmp ",7)){
+		pthread_mutex_destroy(&mutex);
+		close(s_socket);
+}
+void *do_service(void *argv)
+{		
+	int n;
+	int revLen;
+	char rcvBuffer[BUFSIZE];	
+	int c_socket= *((int *)argv);
+	while(1){
+		char *token;
+		char *str[3];
+		int i=0;
+		rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
+		rcvBuffer[rcvLen] = '\0';
+		printf("[%s] received\n", rcvBuffer);
+		if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
+			break;
+		else if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요"))){
+                       	strcpy(buffer,"안녕하세요.만나서반가워요");
+		}			else if(!strncmp(rcvBuffer, "이름이뭐야?", strlen("이름이뭐야?"))){
+              		strcpy(buffer,"최우석이야");
+		}                   
+		else if(!strncmp(rcvBuffer, "몇살이야?", strlen("몇살이야?"))){
+			strcpy(buffer,"23살이야");
+		}
+		else if(!strncasecmp(rcvBuffer,"strlen ", 7)){			
+			sprintf(buffer,"내문자열의 길이는 %d입니다\\n", strlen(rcvBuffer)-7);
+		}
+		else if(!strncasecmp(rcvBuffer,"strcmp ",7)){
 			int i = 0;
 			token = strtok(rcvBuffer, " ");
 			while(token != NULL){
@@ -97,7 +98,7 @@ main( )
 			}
 		n=strlen(buffer);
 		write(c_socket,buffer,n);
-			if(!strncasecmp(rcvBuffer,"readfile ",9)){
+		if(!strncasecmp(rcvBuffer,"readfile ",9)){
 			int i=0;
 			token= strtok(rcvBuffer, " ");
 			while(token != NULL){
@@ -129,10 +130,9 @@ main( )
 				printf("command failed!\n");
 			}		
 		}
-		close(c_socket);
-	if(!strncasecmp(rcvBuffer, "kill server", 11))
-		break;
-		
-	}
-	close(s_socket);
+	pthread_mutex_lock(&mutex);
+	numClient--;
+	pthread_mutex_unlock(&mutex);
+	printf("현재%d개의 클라이언트가 접속중입니다",numClient);
+	close(c_socket);
 }
