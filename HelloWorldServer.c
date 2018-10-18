@@ -89,8 +89,8 @@ main( )
 					sprintf(buffer, "readfile 기능을 사용하기 위해서는 readfile <파일명> 형태로 입력하시오.");	
 				fp=fopen(rstr[1],"r");
 				if(fp){
-					memset(buffer, 0, 100);
-					while(fgets(buffer, 100, (FILE *)fp))
+					memset(buffer, 0, MAX);
+					while(fgets(buffer, MAX, (FILE *)fp))
 						printf("%s", buffer);
 				}
 				else
