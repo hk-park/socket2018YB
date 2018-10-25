@@ -17,8 +17,9 @@ main( )
 	int   n, tn;
 	int rcvLen;
 	char rcvBuffer[100];
-	char *t1,*t2;
+	char *t1,*t2,*token;
 	char i[100];
+	char str[100];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -74,7 +75,7 @@ main( )
 		//	tn = strcmp(t1,t2);
 		//	sprintf(i,"%d\n",tn);
 		//	write(c_socket,i,strlen(i));
-			char *token;
+			*token=0;
 			char *str[3];
 			int num = 0;
 			token = strtok(rcvBuffer," ");
@@ -95,34 +96,61 @@ main( )
 		else if(strncasecmp(rcvBuffer, "readfile ", 9) == 0){
 				char *token;  
  				FILE *fp;  
-				char buffer[100];  
+				char buffer[200];  
 				strtok(rcvBuffer, " ");  
 				token = strtok(NULL, " ");  
  				fp = fopen(token, "r");  
 				if(fp){  
-					while(fgets(buffer, 100, (FILE *) fp))  
-					write(c_socket, buffer, strlen(buffer));  
+					while(fgets(rcvBuffer, 100, (FILE *)fp))  
+					write(c_socket, i, strlen(i));  
 				}  
+				
 			}  
 			else if(strncasecmp(rcvBuffer, "exec ", 5) == 0){ 
 				char *token; 
-  				strtok(rcvBuffer, " ");  
+ 				strtok(rcvBuffer, " ");  
 				token = strtok(NULL, "\0");  
 				int ret = system(token);  
 				char *exe="command is executed";  
 				char *fail="command failed";  
- 				if(!ret)   
- 					write(c_socket, exe, strlen(exe));  
-  
-				else  
-  					write(c_socket, fail, strlen(fail));  
-		}   
+ 				if(!ret){ 
+ 					write(c_socket, exe, strlen(exe));
+					printf("\n");
+ 
+				}else  {
+					write(c_socket, fail, strlen(fail));
+					printf("\n");
+				}  
+		}  
+//		else if(!strncasecmp(rcvBuffer, "readfile", 9)){
+//			int ni=0;
+//			token = strtok(rcvBuffer, " ");
+//			while(token != NULL){
+//				str[ni++] = token;
+//				token = strtok(NULL, " ");
+//			}
+			//str[0] = readfile
+                        //str[1] = filename
+//			if(ni<2)
+//				sprintf(buffer,"readfile 기능을 사용하기 위해서는 readfile <파일명> 형태로 입력하시오.");
+//			FILE *fp = fopen(str[1], "r");
+//			if(fp){
+//				char tempStr[100];
+//				memset(buffer, 0,100);
+//				while(fgets(tempStr,100,(FILE *)fp)){
+//					strcat(buffer, tempStr);
+//				}
+//				fclose(fp);	
+//			}else{
+//				sprintf(buffer,"파일이 없습니다");
+//			     }
+//			}
 		n = strlen(buffer);
 		write(c_socket, buffer, n);
 		}
 		close(c_socket);
 		if(!strncasecmp(rcvBuffer, "kill server", 11))
-			break;
+		break;
 	}	
 	close(s_socket);
 }
