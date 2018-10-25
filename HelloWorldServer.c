@@ -5,7 +5,8 @@
 #include <string.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
- 
+//포트번호 정의
+
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 char buffer[1024] = "Hi, I'm server\n";
 int main( )
@@ -14,9 +15,9 @@ int main( )
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
 	int   n;
-	int rcvLen;
+	int rcvLen;//rcv크기
 	char *send_buffer = (char*)malloc(sizeof(char)*100);
-	char rcvBuffer[100];
+	char rcvBuffer[100];//rcv버퍼
 
 
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
