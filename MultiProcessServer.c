@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
@@ -14,11 +15,12 @@
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
 char buffer[BUFSIZE] = "Hi, I'm server\n";
+
 int   c_socket, s_socket;
 int numClient=0;
-
 void do_service(int c_socket);
 void sig_handler(); 
+int fd[2];//pipe로 사용할 파일 디스크립터
 
 main( )
 {
@@ -43,6 +45,11 @@ main( )
 		printf("listen Fail\n");
 		return -1;
 	}
+	
+	if(pipe(fd)<0) { //pipe생성. 생성 실패 시, 프로그램 종료
+		printf("[ERROR] pipe error");
+		exit(0);
+	}
  	
 	while(1) {
 		len = sizeof(c_addr);
@@ -60,6 +67,8 @@ main( )
                         do_service(c_socket);
                         exit(0);
                 }
+		else
+			printf("[ERROR] fork() error\n");
 	}
 	close(s_socket);
 }
@@ -77,6 +86,8 @@ void do_service(int c_socket){
 		printf("[%s] received\n", rcvBuffer);
 		
 		if(strncasecmp(rcvBuffer, "quit", 4)==0)
+			break;
+		else if(!strncasecmp(rcvBuffer, "kill server", 11)) 
 			break;
 		//예제5-1
 		else if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요"))){
@@ -150,13 +161,24 @@ void do_service(int c_socket){
 		n = strlen(buffer);
 		write(c_socket, buffer, n);
 	}
+	write(fd[1], rcvBuffer, rcvLen);
 	close(c_socket);
 }
 void sig_handler() {
 	int pid;
 	int status;	// 자식 프로세스의 상태 확인
+	char rcvBuffer[BUFSIZE];
+
 	pid = wait(&status);
 	numClient--;
 	printf("pid[%d] is terminated. status = %d\n", pid, status);
 	printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n", numClient);
+	
+	read(fd[0], rcvBuffer, sizeof(rcvBuffer));
+	//kill server 구현
+	if(!strncasecmp(rcvBuffer, "kill server", 11)) {
+		printf("[SERVER] kill server\n");
+		close(s_socket);
+		exit(0);
+	}
 }
