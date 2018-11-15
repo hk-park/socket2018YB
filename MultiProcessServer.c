@@ -38,9 +38,9 @@ main( )
  	while(1) {
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
-       		printf("Client is connected\n");
-       		pid = fork();
-       		if(pid > 0){
+		printf("Client is connected\n");
+		pid = fork();
+		if(pid > 0){
 			close(c_socket);
 			continue;
       		}else if(pid == 0){
