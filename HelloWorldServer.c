@@ -86,15 +86,16 @@ main( )
 					token = strtok(NULL," ");
 				}
 				if(i<2)
-					sprintf(buffer,"readfile <파일명>형태로 입룍하시오.");
+					sprintf(buffer,"readfile <파일명>형태로 입력하시오.");
 				fp = fopen(str[1],"r");
 				if(fp){
 					char tempStr[BUFSIZE];
 					memset(buffer,0,1);
 					while(fgets(tempStr,BUFSIZE,(FILE *)fp))
 						strcat(buffer,tempStr);
-				}
-				fclose(fp);
+					fclose(fp);
+				}else
+					sprintf(buffer,"파일이 없습니다.");
 			}
 			if (!strncasecmp(rcvBuffer,"exec ",5)){
 				i = 0;
