@@ -37,20 +37,21 @@ int conn_s;
 	}
  	
 	while(1) {
+		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		if((pid=fork()) > 0){
 			close(c_socket);
 			continue;
 		}else if(pid == 0){
 			close(s_socket);
-			do_service(conn_s);
+			do_service(c_socket);
 			exit(0);
 		}
 	}
 }
 do_service(int c_socket){
 	while(1){
-		len = sizeof(c_addr);
+		
                 //3-3.클라이언트가 접속했을 때 "Client is connected" 출력
                 printf("Client is connected\n");
                                 
