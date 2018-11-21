@@ -17,7 +17,7 @@ char clearBuffer[BUFSIZE];
 int pid;
 
 char *token;
-char *str[3];
+char *str[5];
 int icount=0;
 
 int len, n;
@@ -89,7 +89,7 @@ void do_service(int c_socket){
 				str[icount++]=token;
 				token = strtok(NULL, " ");
 			}
-			if(icount<=1 || icount>=3){
+			if(icount<=2 || icount>3){
 				sprintf(buffer, "문자열 비교를 위해서는 두 문자열이 필요합니다.\n");
 				icount=0;
 			}
