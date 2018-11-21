@@ -1,27 +1,3 @@
-
-대화를 열었습니다. 읽지 않은 메일이 1개 있습니다.
-
-콘텐츠로 건너뛰기
-스크린 리더로 Gmail 사용하기
-59개 중 1개
-dd
-받은편지함
-	x
-이재영 <jaeyoung0509@naver.com>
-	
-첨부파일오후 10:09 (0분 전)
-	
-나에게
-   
-메일 번역
-영어 번역 안함
-
-ddd
-첨부파일 영역
-	
-	
-	
-
 #include <stdio.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -190,5 +166,4 @@ int do_service(int c_socket)
 	return 0;
 }
 
-11111.txt
-11111.txt 표시 중입니다.
+
