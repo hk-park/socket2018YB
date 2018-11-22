@@ -5,21 +5,19 @@
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
 //#define PORT 10000
-//dd 
+#define BUFSIZE 10000
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
-char buffer[100] = "Hi, I'm server\n";
+char buffer[BUFSIZE] = "Hi, I'm server\n";
  
 main( )
 {	
-	FILE *fp;
-	char file[100];
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
 	int   n;
 	int rcvLen;
-	char rcvBuffer[100];
+	char rcvBuffer[BUFSIZE];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -39,11 +37,14 @@ main( )
 	}
  	
 	while(1) {
-		len = sizeof(c_addr);
+		len=sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
 		printf("Client is connected\n");
 		while(1){
+			char *token;
+			char *str[3];
+			int i=0;
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
 			printf("[%s] received\n", rcvBuffer);
@@ -64,8 +65,6 @@ main( )
 				sprintf(buffer,"내문자열의 길이는 %d입니다\\n", strlen(rcvBuffer)-7);
 			}
 			else if(!strncasecmp(rcvBuffer,"strcmp ",7)){
-			char *token;
-			char *str[3];
 			int i = 0;
 			token = strtok(rcvBuffer, " ");
 			while(token != NULL){
@@ -84,8 +83,6 @@ main( )
 		n=strlen(buffer);
 		write(c_socket,buffer,n);
 			if(!strncasecmp(rcvBuffer,"readfile ",9)){
-			char *token;
-			char *str[2];
 			int i=0;
 			token= strtok(rcvBuffer, " ");
 			while(token != NULL){
@@ -93,10 +90,12 @@ main( )
 			i++;
 			token = strtok(NULL," ");
 			}
-			fp=fopen(str[1],"r");
+			FILE *fp=fopen(str[1],"r");
 			if(fp){
-				while(fgets(file, 100, (FILE *)fp))
-				printf("%s\n",file);	
+				char tempStr[BUFSIZE];
+				memset(buffer, 0, BUFSIZE);
+				while(fgets(tempStr, BUFSIZE, (FILE *)fp))
+				strcat(buffer,tempStr);
 				
 			}
 			fclose(fp);
@@ -113,12 +112,12 @@ main( )
 				printf("command is executed!\n");
 			else
 				printf("command failed!\n");
-			return 0;
 			}		
+		}
 		close(c_socket);
 	if(!strncasecmp(rcvBuffer, "kill server", 11))
 		break;
-		}
+		
 	}
 	close(s_socket);
 }
