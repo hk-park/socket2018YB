@@ -2,6 +2,9 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <signal.h>	//signal 함수에 필요한 헤더 파일
+#include <sys/wait.h>	//마찬가지로 시그널에 필요한 헤더 파일
+
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
 //#define PORT 10000
@@ -12,13 +15,17 @@
 char buffer[BUFSIZE] = "Hi, I'm server\n";
 
 void do_service(int c_socket);
+void sig_handler();
+
+int clientNum = 0;
 
 main( )
 {
-	int   c_socket, s_socket;
+	int c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int len;
 	int pid;
+	signal(SIGCHLD, sig_handler);
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -41,8 +48,10 @@ main( )
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
+		clientNum++;
 		printf("Client is connected\n");
-		
+		printf("현재 %d개의 클라이언트가 접속하였습니다.\n", clientNum);
+				
 		pid = fork();
 
 		if(pid > 0) {
@@ -55,13 +64,14 @@ main( )
 			exit(0);
 		}
 	}
+	close(s_socket);
 }
 	
 do_service(int c_socket){
 	while(1){
-                        int rcvLen;
-                        int rcvBuffer[BUFSIZE];
-			int n, i;
+                        int rcvLen=0;
+                        char rcvBuffer[BUFSIZE];
+			int n=0, i=0;
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
                         printf("[%s] received\n", rcvBuffer);
@@ -141,4 +151,15 @@ do_service(int c_socket){
                         write(c_socket, buffer, n);
                 }
                 close(c_socket);
+}
+
+void sig_handler(){
+	int pid;
+	int status;	//현재 자식프로세스의 상태를 보는 것
+	pid = wait(&status);
+	clientNum--;
+	//wait :자식 프로세스의 자원이 다 회수가 되고, 정상적으로 종류 될 수 있도록 기다려 주는 함수
+	//비정상적으로 종료될 경우 뭐.. 오류 코드를 넘겨준대나 뭐래나...	
+	printf("pid[%d] is terminated. status = %d\n", pid, status);
+	printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n", clientNum);
 }
