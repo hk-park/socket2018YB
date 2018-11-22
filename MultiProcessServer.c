@@ -2,6 +2,8 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <signal.h>
+#include <sys/wait.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정
 //#define PORT 10000
 #define PORT 9000
@@ -9,12 +11,14 @@
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
 char buffer[BUFSIZE];
+void sig_handler();
+int clientCnt=0;
 main( )
 {
 	int   c_socket, s_socket, c_strlen, pid;
 	struct sockaddr_in s_addr, c_addr;
 	int   sock, len;
-
+	signal(SIGCHLD, sig_handler);
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -37,6 +41,7 @@ while(1) {
 	len = sizeof(c_addr);
 	c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 	printf("[INFO] Client is connected\n");
+	printf("[INFO] 현재 %d개의 클라이언트가 접속하였습니다.\n", ++clientCnt);
 	if((pid = fork( )) > 0) {// 부모 프로세스
 	// 다른 클라이언트의 요청 접수
 	close(c_socket);
@@ -150,5 +155,12 @@ while(1) {
 		write(c_socket, buffer, strlen(buffer));
 	}
 	close(c_socket);
+}
+void sig_handler(){
+	int pid;
+	int status;
+	pid = wait(&status);
+	printf("[info] pid[%d] is terminated. status = %d\n", pid, status);
+	printf("[info] 1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n", --clientCnt);
 }
 
