@@ -2,6 +2,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
+#include<signal.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
 //#define PORT 10000
@@ -16,10 +17,20 @@ int   len;
 int   n;
 int rcvLen;
 char rcvBuffer[BUFSIZE];
+int numClient = 0;
+int pid;
+int status;
 
+void sig_handler(int signo){
+	pid = wait(&status);
+	printf("pid[%d] terminated. status = %d\n",pid,status);
+	numClient --;
+	printf("1개의 클라이언트가 접속 종료되어 %d개의  클라이언트가 접속되어 있습니다.\n",numClient);
+}
 
 main()
 {
+	signal(SIGCHLD, sig_handler);
 	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	memset(&s_addr, 0, sizeof(s_addr));
 	//s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -40,7 +51,9 @@ main()
 	while (1) {
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
-
+		printf("Client Connected\n");
+		numClient ++;
+		printf("현재 %d 개의 클라이언트가 접속하였습니다.\n",numClient);
 		if ((pid = fork()) > 0) {// 부모 프로세스
 		 // 다른 클라이언트의 요청 접수
 			close(c_socket);
