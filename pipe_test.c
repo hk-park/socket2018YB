@@ -4,7 +4,7 @@
 #include<stdlib.h>
 
 main() {
-	int fd[2]; // pipe로 사용할 파일디스크립터
+	int fd[2], fd2[2]; // pipe로 사용할 파일디스크립터
 	char buf[255];
 	int pid;
 	
@@ -19,12 +19,14 @@ main() {
 					memset(buf,0x00,255);
 					read(fd[0],buf,sizeof(buf));
 					printf("[PRAENT] client message = %s",buf);
+					write(fd2[1],buf,strlen(buf));
 	}else if (pid == 0){
 					// 자식 프로세스
 					// 파이프를 통해 부모 프로세스에게 값을 전달
 					memset(buf, 0x00, 255);
 					sprintf(buf,"[%d] Hello, I'm child.",getpid());
 					write(fd[1],buf,strlen(buf));
+					read(fd2[0],buf,sizeof(buf));
 	}else{
 		printf("[ERROR] fork() failed\n");
 		exit(0);
