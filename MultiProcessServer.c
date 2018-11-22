@@ -3,33 +3,31 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 #define PORT 9000
 #define BUFSIZE 10000
 
 void do_service(int c_socket);
+void sig_handler();
 
 char buffer[BUFSIZE] = "Hi, I'm server\n";
 char rcvBuffer[BUFSIZE];
 char tempBuffer[BUFSIZE];
 char clearBuffer[BUFSIZE];
 
-int pid;
-
-char *token;
-char *str[5];
-int icount=0;
-
 int len, n;
-int rcvLen;
-FILE *fp;
+int concli = 0;
 
 int main(){
 	int c_socket, s_socket;
+	int pid;
 	//s_socket: 클라이언트의 접속을 기다리는 소켓
 	//c_socket: 클라이언트에게 메시지를 전달하기 위한 소켓
 	struct sockaddr_in s_addr, c_aadr;
-	
+	//시그널
+	signal(SIGCHLD, sig_handler);
 	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -50,6 +48,9 @@ int main(){
 	while(1){
 		len = sizeof(c_aadr);
 		c_socket = accept(s_socket, (struct sockaddr *)&c_aadr, &len);
+		concli++;
+		printf("Client is connected\n");
+		printf("현재 %d개의 클라이언트가 접속 하였습니다.\n", concli);
 		if((pid=fork())>0){
 			close(c_socket);
 			continue;
@@ -65,7 +66,12 @@ int main(){
 }
 
 void do_service(int c_socket){
-	printf("Client is connected\n");
+	char *token;
+	char *str[5];
+	int icount=0;
+
+	int rcvLen;
+	FILE *fp;
 	while(1){
 		rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 		rcvBuffer[rcvLen]='\0';
@@ -170,4 +176,13 @@ void do_service(int c_socket){
 	/*if(!strncasecmp(rcvBuffer, "kill server", 11)){
 		break;
 	}*/
+}
+
+void sig_handler(){
+	int pid;
+	int status;
+	pid = wait(&status);
+	printf("pid[%d] is terminated. status = %d\n", pid, status);
+	concli--;
+	printf("1개의 클라이언트가 종료되어 현재 %d가 접속 되어 있습니다.\n", concli);
 }
