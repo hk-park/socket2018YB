@@ -2,27 +2,33 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <signal.h>
+#include<sys/wait.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
 #define BUFSIZ 10000
+
 //#define PORT 10000
  
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
 int do_service(int c_socket);
-
+int count=0;
+void sig_handler();
 main( )
 {
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
 	int   n;
+
 	int sel = 0;
 	int rcvLen;
 	char rcvBuffer[100];
 	char buffer[BUFSIZ] = "Server is connected";
 	char *bf1,*bf2;
- 	s_socket = socket(PF_INET, SOCK_STREAM, 0);
+ 	signal(SIGCHLD , sig_handler);
+	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
 	//s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -45,6 +51,8 @@ main( )
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
 		printf("Client is connected\n");
+		count ++;
+		printf("현재 %d개의 클라이언트가 접속했습니다\n",count);
 		n = strlen(buffer);
 		write(c_socket, buffer, n);	
 		int pid = fork();
@@ -72,8 +80,10 @@ int do_service(int c_socket)
 		rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 		rcvBuffer[rcvLen] = '\0';
 		printf("[%s] received\n", rcvBuffer);
-		if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
-			break;
+		if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0){
+			count--;
+		
+			break;}
 		else if(strncasecmp(rcvBuffer,"안녕하세요.",strlen("안녕하세요."))==0)
 			sprintf(buffer,"안녕하세요. 만나서 반가워요.");	
 		else if(strncasecmp(rcvBuffer,"이름이 머야?",strlen("이름이 머야?"))==0)
@@ -166,4 +176,13 @@ int do_service(int c_socket)
 	return 0;
 }
 
+void sig_handler(){
+	int pid;
+	int status;
+	pid = wait(&status); //sigchild를 받았을 때 종료가 될때까지 기다려주는 함수
+	printf("pid[%d] is terminated. status =%d\n",pid,status);
+	count --;
+	printf("1개의 클라이언트가 종료되어 %d개의 클라이언트가 접속되어 있습니다\n",count);
+	
 
+}
