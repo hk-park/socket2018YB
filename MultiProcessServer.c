@@ -28,7 +28,7 @@ main( )
 	char buffer[BUFSIZ] = "Server is connected";
 	char *bf1,*bf2;
 	signal(SIGCHLD,sig_handler);
-
+	
 
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
