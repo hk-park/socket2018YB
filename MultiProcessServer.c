@@ -3,11 +3,16 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>	
+#include <signal.h>
+#include <sys/wait.h>
+
 #define PORT 12000
 		
 char buffer[100]="NONE";
 
 int pid;
+int numClient = 0; //현재 접속한 클라이언트 수
+void sig_handler();
 
 int main(){
 
@@ -17,6 +22,12 @@ int main(){
 	//c_socket: //클라이언트에게 메시지를 전달하기 위한 소켓
 	struct sockaddr_in s_addr, c_addr;	//netinet.에 선언되어있는 구조체
   	int len,n;
+	
+	//11주차 실습 start
+	int returnSignal;
+	signal(SIGCHLD, sig_handler); // 자식 프로세스에서 신호가 오면 sig_handler 를 실행하겠다. 
+
+	//11_22  11주차 실습  end
 	//3-4
 
 	//
@@ -43,7 +54,7 @@ int main(){
 			
 		len = sizeof(c_addr);	
 		c_socket = accept(s_socket, (struct sockaddr*)&c_addr, &len);//클라이언트가 접속할때까지 대기
-		printf("Client is Connected\n"); 
+		printf("현재 %d 명의 클라이언트 접속중 \n",++numClient); //1 더하고 출력 
 					
 		if((pid = fork()) > 0)  //부모 프로세스는 accept를 받으면 자신을 fork()해서 
 		{
@@ -52,8 +63,9 @@ int main(){
 		}
 		else if(pid == 0) //자식 프로세스는 부모와 같은 정보를 가졌지만 s_socket을 지우고 c_socket 만으로 소통한다.
 		{
+			numClient = 0; //이거 안하면 자식프로세스가 서버 접속자수 정보를 가지고있는거 아닌가?
 			close(s_socket);
-			do_service(c_socket);
+			do_service(c_socket);		
 			exit(0);
 		}
 			//분명 c_socket을 한번 더 닫는거같는데 오류가 안난다. 무시하는거같다. exit 해서그런가? 그럼 부모 프로세스는 뭐지?
@@ -185,6 +197,14 @@ do_service(int c_socket)
 	close(c_socket);
 } //do_service(c_socket);
 
+void sig_handler(){
+	int pid; //pid
+	int status; //자식 프로세스 상태
+	pid = wait(&status);
+	printf("pid[%d] 가 끝났다. 상태: = %d\n",pid,status);
+	printf("%d개의 클라이언트 접속중, 1개의 클라이언트가 접속 종료함.\n",--numClient);
+//	return numClient;
+}
 
 
 
