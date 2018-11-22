@@ -3,11 +3,19 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <sys/wait.h>
+
 #define PORT 8000
 #define BUFSIZE 10000
 
 char buffer[BUFSIZE]; 
 
+void do_service(int c_socket);
+void sig_handler();
+
+int count_Cli = 0;	// stackoverflow 사이트
+			// 전역변수로 지정하지 말고 sig_handler에 인자로 넘겨서 사용하는 방법도 있음
 main( ) {
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
@@ -15,6 +23,7 @@ main( ) {
         int   len;
         int   n;
         int rcvLen;
+	signal(SIGCHLD, sig_handler);
         char rcvBuffer[BUFSIZE];
         s_socket = socket(PF_INET, SOCK_STREAM, 0);
         FILE *fp;
@@ -41,6 +50,8 @@ main( ) {
 		printf("Client is connected\n");
 
 		if((pid = fork()) > 0) {
+			count_Cli++;
+			printf("Connect Client is : %d\n", count_Cli);
 			close(c_socket);
 			continue;
 		}
@@ -52,7 +63,7 @@ main( ) {
 	}
 }
 
-do_service(int c_socket) {
+void do_service(int c_socket) {
 	int s_socket;
 	struct sockaddr_in s_addr, c_addr;
         int len;
@@ -72,8 +83,7 @@ do_service(int c_socket) {
 		rcvBuffer[rcvLen] = '\0';
 		printf("[%s] received\n", rcvBuffer);
 
-		if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
-			break;
+		if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0) 			break;
 		else if(!strncasecmp(rcvBuffer, "hi", 2)) {
 			strcpy(buffer, "Hi. nice to meet you.");
 		}
@@ -156,4 +166,12 @@ do_service(int c_socket) {
 		write(c_socket, buffer, n);
 	}
 	close(c_socket);
+}
+void sig_handler() {
+	int pid;
+	int status;
+	pid = wait(&status);	// 자식프로세스의 종료까지 기다렷다 정상이면 0 비정상이면 에러코드 출력
+	count_Cli--;
+	printf("pid[%d] is terminated. status = %d\n", pid, status);
+	printf("Client is quit. Connect Client is : %d\n", count_Cli);
 }
