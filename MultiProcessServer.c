@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <signal.h>
+#include <sys/wait.h>
 #include <string.h>
 #define PORT 10000
 #define BUFSIZE 10000
@@ -8,7 +10,8 @@ char Hbuffer[BUFSIZE] = "안녕하세요. 만나서 반가워요\n";
 char Nbuffer[BUFSIZE] = "내 이름은 유요섭이야.\n";
 char Abuffer[BUFSIZE] = "나는 21살이야.\n";
 char nothing[BUFSIZE] = "아무것도 아님\n";
- 
+void sig_handler();
+int clients=0;
 main( )
 {
 	FILE *fp;
@@ -19,7 +22,7 @@ main( )
 	int rcvLen;
 	char rcvBuffer[BUFSIZE], *ptr,  *ptr1, *ptr2, buffer[BUFSIZE], fbuffer[BUFSIZE];
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
-	
+	signal(SIGCHLD, sig_handler);
 	memset(&s_addr, 0, sizeof(s_addr));
 	//s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	s_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -38,12 +41,14 @@ main( )
  	while(1) {
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
+		clients= clients + 1;
 		printf("Client is connected\n");
+		printf("현재 %d개의 클라이언트가 접속하였습니다.\n", clients);
 		pid = fork();
 		if(pid > 0){
 			close(c_socket);
 			continue;
-      		}else if(pid == 0){
+      	}else if(pid == 0){
 			close(s_socket);
 			do_service(c_socket);
 			exit(0);
@@ -124,3 +129,12 @@ do_service(int c_socket){
 	}
 	close(s_socket);
 }
+void sig_handler(){
+	int pid;
+	int status;
+	pid = wait(&status);
+	clients = clients - 1;
+	printf("1개의 클라이언트가 접속종료되어  %d개의 클라이언트가 접속하였습니다.\n", clients);
+	printf("pid %d is terminated status = %d\n", pid, status);
+}
+
