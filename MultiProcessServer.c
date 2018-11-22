@@ -5,6 +5,7 @@
 #include <string.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정
 #define PORT 9000
@@ -13,7 +14,7 @@
 void sig_handler();
 int do_service(int c_socket);
 int connected = 0;
-
+int fd[2];
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 char buffer[1024] = "Hi, I'm server\n";
 int main( )
@@ -28,6 +29,11 @@ int main( )
 	char rcvBuffer[100];//rcv버퍼
 
 
+	if(pipe(fd)<0){
+		printf("[ERROR] pipe error");
+		exit(1);
+	}
+	
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 /* PF_INET :IPv4 인터넷 프로토콜 페밀리
  * SOCK_STREAM : 스트림 소캣
@@ -64,6 +70,13 @@ int main( )
 		printf("현재 %d개의 클라이언트가 접속했습니다.\n", ++connected);
 		if(fork() <= 0){
 			if(do_service(c_socket)<0)break;
+		}
+		else{
+			memset(rcvBuffer,0,sizeof(rcvBuffer));
+			read(fd[0],rcvBuffer,sizeof(rcvBuffer));
+			if(strncasecmp(rcvBuffer,"kill server",11)==0){
+				break;
+			}
 		}
 	}
 	close(s_socket);
@@ -142,10 +155,9 @@ int do_service(int c_socket){
 		write(c_socket, buffer, n);
 	}
 	close(c_socket);
-	if(strncasecmp(rcvBuffer, "kill server", 11))
-		return -1;
-	else
-		return 0;
+
+	write(fd[1],rcvBuffer,rcvLen);
+	return 0;
 }
 
 void sig_handler(){
