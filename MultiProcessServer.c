@@ -9,12 +9,14 @@
 
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
+#define KILL "Kill"
 //#define PORT 10000
  
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
 char buffer[100] = "Hi, I'm server\n";
 int numClient = 0;
+int fd[2];
 void sig_handler();
 void do_service(int c_socket);
 main( )
@@ -24,6 +26,11 @@ main( )
 	int len;
 	int pid;
 	signal(SIGCHLD, sig_handler);
+
+	if(pipe(fd) < 0 ){
+		printf("[ERR] pipe error\n");
+		exit(0);
+	}
 
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
@@ -48,41 +55,41 @@ main( )
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		numClient++;
 		printf("현재 %d개의 클라이언트가 접속하였습니다.\n", numClient);
-		if((pid = fork()) > 0){
+		if((pid = fork()) > 0){ //부모
 			close(c_socket);
 			continue;
 		}
-		else{
+		else if(pid == 0){ //자식
 			close(s_socket);
 			printf("Client is connected\n");
 			do_service(c_socket);
 			exit(0);
 		}
-	}	
+		else{
+			printf("fork error\n");
+		}
+	}
+	close(s_socket);	
 }
 
 void do_service(int c_socket){
 	int rcvLen;
 	int   n;
-	int fd[2];
 	char rcvBuffer[100], rcv[100], *tok, *tok2, pipeBuf[100];
-	if(pipe(fd) < 0 ){
-		printf("[ERR] pipe error\n");
-		exit(0);
-	}
 
 	while(1){
 		rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 		rcvBuffer[rcvLen] = '\0';
 		rcv[rcvLen] = '\0';
 		printf("[%s] received\n", rcvBuffer);
-		
 
-		if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0){
-			strcpy(pipeBuf, rcvBuffer);
-			memset(pipeBuf, 0, 100);
-			read(fd[0], pipeBuf, sizeof(pipeBuf));
-			exit(0);
+		if(strncasecmp(rcvBuffer, "kill server", 11) == 0){
+			int serverpid = getppid();
+			sprintf(pipeBuf, "%d", serverpid);
+			write(fd[1],pipeBuf,strlen(pipeBuf));
+		}
+		else{
+			write(fd[1],KILL,sizeof(KILL));
 		}
 		if(strcmp(rcvBuffer, "안녕하세요") == 0){
 			strcpy(rcv, "안녕하세요 만나서 반가워요.");
@@ -154,8 +161,11 @@ void do_service(int c_socket){
 
 void sig_handler(int signo){
 	int pid, status;
+	char pBuf[100];
 	pid = wait(&status);
 	printf("1개의 클라이언트가 종료되어 %d개의 클라이언트가 접속되어있습니다.\n",--numClient);
 	printf("[pid] = [%d] is terminated. Status = %d\n\n", pid, status);
-		
+	read(fd[0], pBuf, sizeof(pBuf));
+	if(strcmp(pBuf,KILL) != 0)	
+		kill(atoi(pBuf), 9);
 }
