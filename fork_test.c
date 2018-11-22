@@ -9,9 +9,11 @@ main()
 	if(pid>0){
 		a=a+1;
 		printf("[PARENT] a = %d, b = %d\n",a,b);
+		sleep(30);
 	}else if(pid == 0){//자식 프로세스
 		b=b+1;
 		printf("[CHILD] a = %d, b = %d\n",a,b);
+		sleep(10);
 	}
 	printf("[%d] a = %d / b = %d\n",getpid(),a,b);
 	return 0;

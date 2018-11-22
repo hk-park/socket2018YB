@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <signal.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
@@ -9,12 +11,15 @@
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
 char buffer[BUFSIZE] = "Hi, I'm server\n";
- 
+int numClient=0;
+void do_service(int c_socket);
+void sig_handler();
 main( )
 {
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int len;
+	signal(SIGCHLD,sig_handler);
 	int pid;
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
@@ -37,16 +42,20 @@ main( )
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
+		numClient++;
 		printf("Client is connected\n");
-		if((pid = fork())>0){
+		printf("현재 %d개의 클라이언트가 접속하였습니다.\n",numClient);
+		pid=fork();
+		if(pid>0){
 			close(c_socket);
                         continue;
                 }else if(pid==0){
                         close(s_socket);
-                        do_service(conn_s);
+                        do_service(c_socket);
                         exit(0);
                 }
 	}
+	close(s_socket);
 }
 do_service(int c_socket){
 	int   len;
@@ -86,13 +95,13 @@ do_service(int c_socket){
                         else if(!strncasecmp(rcvBuffer, "readfile ",9)){
                                 int i=0;
                                 char *Atoken;
-char *Astr[2];
+				char *Astr[2];
                                 Atoken = strtok(rcvBuffer, " ");
                                 while(Atoken != NULL){
                                         Astr[i++]=Atoken;
                                         Atoken=strtok(NULL, " ");
                                 }
-			if(i<2)
+				if(i<2)
                                         sprintf(buffer, "readfile 기능을 사용하기 위해서는 readfile <파일명> 형>태로 입력하시오.");
                                 FILE *fp = fopen(Astr[1], "r");
                                 if(fp){
@@ -100,7 +109,7 @@ char *Astr[2];
                                         memset(buffer, 0, BUFSIZE);
                                         while(fgets(tempStr, BUFSIZE, (FILE *)fp)){
                                                 strcat(buffer, tempStr);
-                                        }
+                                	}
                                         fclose(fp);
                                 }else{
                                         sprintf(buffer, "파일이 없습니다.");
@@ -125,11 +134,15 @@ char *Astr[2];
                                 strcpy(buffer,"무슨 말인지 모르겠습니다.ㅠ_ㅠ");
                         n=strlen(buffer);
                         write(c_socket, buffer, n);
-                }
+        	}
                 close(c_socket);
-                if(!strncasecmp(rcvBuffer, "kill server", 11))
-                        break;
-		}
-        close(s_socket);
-	}
- }    
+ }
+void sig_handler(){
+	int pid;
+	int status;
+	pid=wait(&status);
+	numClient--;
+	printf("pid[%d] terminated, status=%d\n",pid,status);
+	printf("1개의 클라이언트가 접속종료 되어 %d개의 클라이언트가 접속되어있습니다.\n",numClient);
+}
+    
