@@ -5,6 +5,8 @@
 #include <string.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <unistd.h>
+
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
 //#define PORT 10000
@@ -62,80 +64,92 @@ main( )
 void do_service(int c_socket){
 	int rcvLen;
 	int   n;
-	char rcvBuffer[100], rcv[100], *tok, *tok2;
-		while(1){
-			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
-			rcvBuffer[rcvLen] = '\0';
-			rcv[rcvLen] = '\0';
-			printf("[%s] received\n", rcvBuffer);
-			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
-				return 0;
-			if(strcmp(rcvBuffer, "안녕하세요") == 0){
-				strcpy(rcv, "안녕하세요 만나서 반가워요.");
-				n = strlen(rcv);
-				write(c_socket, rcv, n);
-			}
-			else if(strcmp(rcvBuffer, "이름이뭐야?") == 0){
-				strcpy(rcv, "내이름은 전진수야.");
-				n = strlen(rcv);
-				write(c_socket, rcv, n);
-			}
-			else if(strcmp(rcvBuffer, "몇살이야?") == 0){
-				strcpy(rcv, "나는 29살이야.");
-				n = strlen(rcv);
-				write(c_socket, rcv, n);
-			}
-			else if(strncasecmp(rcvBuffer, "strlen ", 7) == 0){
-				strtok(rcvBuffer, " ");
-				tok = strtok(NULL, " ");
-				sprintf(rcv, "%d\n", strlen(tok));
-				n = strlen(rcv);
-				write(c_socket, rcv, n);
-			}
-			else if(strncasecmp(rcvBuffer, "strcmp ", 7) == 0){
-				strtok(rcvBuffer, " ");
-				tok = strtok(NULL, " ");
-				tok2 = strtok(NULL, " ");
-				if(!strcmp(tok, tok2)){
-					sprintf(rcv, "%d\n", strcmp(tok, tok2));
-				}
-				else{
-					strcpy(rcv, "두개의 값이 틀립니다!");
-				}
-				n = strlen(rcv);
-				write(c_socket, rcv, n);
-			}
-			else if(strncasecmp(rcvBuffer, "readfile ", 9) == 0){
-				FILE *fp;
-				char buffer[100];
-				strtok(rcvBuffer, " ");
-				tok = strtok(NULL, " ");
-				fp = fopen(tok, "r");
-				if(fp){
-					while(fgets(buffer, 100, (FILE *) fp))
-					write(c_socket, buffer, strlen(buffer));
-				}
-			}
-			else if(strncasecmp(rcvBuffer, "exec ", 5) == 0){
-				strtok(rcvBuffer, " ");
-				tok = strtok(NULL, "\0");
-				int ret = system(tok);
-				char *ok="command Success!!";
-				char *no="command Failed!";
-				if(!ret) {
-					write(c_socket, ok, strlen(ok));
-					write(c_socket, tok, strlen(tok));
-				}
-				else{
-					write(c_socket, no, strlen(no));
-				}
+	int fd[2];
+	char rcvBuffer[100], rcv[100], *tok, *tok2, pipeBuf[100];
+	if(pipe(fd) < 0 ){
+		printf("[ERR] pipe error\n");
+		exit(0);
+	}
+
+	while(1){
+		rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
+		rcvBuffer[rcvLen] = '\0';
+		rcv[rcvLen] = '\0';
+		printf("[%s] received\n", rcvBuffer);
+		
+
+		if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0){
+			strcpy(pipeBuf, rcvBuffer);
+			memset(pipeBuf, 0, 100);
+			read(fd[0], pipeBuf, sizeof(pipeBuf));
+			exit(0);
+		}
+		if(strcmp(rcvBuffer, "안녕하세요") == 0){
+			strcpy(rcv, "안녕하세요 만나서 반가워요.");
+			n = strlen(rcv);
+			write(c_socket, rcv, n);
+		}
+		else if(strcmp(rcvBuffer, "이름이뭐야?") == 0){
+			strcpy(rcv, "내이름은 전진수야.");
+			n = strlen(rcv);
+			write(c_socket, rcv, n);
+		}
+		else if(strcmp(rcvBuffer, "몇살이야?") == 0){
+			strcpy(rcv, "나는 29살이야.");
+			n = strlen(rcv);
+			write(c_socket, rcv, n);
+		}
+		else if(strncasecmp(rcvBuffer, "strlen ", 7) == 0){
+			strtok(rcvBuffer, " ");
+			tok = strtok(NULL, " ");
+			sprintf(rcv, "%d\n", strlen(tok));
+			n = strlen(rcv);
+			write(c_socket, rcv, n);
+		}
+		else if(strncasecmp(rcvBuffer, "strcmp ", 7) == 0){
+			strtok(rcvBuffer, " ");
+			tok = strtok(NULL, " ");
+			tok2 = strtok(NULL, " ");
+			if(!strcmp(tok, tok2)){
+				sprintf(rcv, "%d\n", strcmp(tok, tok2));
 			}
 			else{
-			n = strlen(buffer);
-			write(c_socket, buffer, n);
+				strcpy(rcv, "두개의 값이 틀립니다!");
+			}
+			n = strlen(rcv);
+			write(c_socket, rcv, n);
+		}
+		else if(strncasecmp(rcvBuffer, "readfile ", 9) == 0){
+			FILE *fp;
+			char buffer[100];
+			strtok(rcvBuffer, " ");
+			tok = strtok(NULL, " ");
+			fp = fopen(tok, "r");
+			if(fp){
+				while(fgets(buffer, 100, (FILE *) fp))
+				write(c_socket, buffer, strlen(buffer));
 			}
 		}
-		close(c_socket);
+		else if(strncasecmp(rcvBuffer, "exec ", 5) == 0){
+			strtok(rcvBuffer, " ");
+			tok = strtok(NULL, "\0");
+			int ret = system(tok);
+			char *ok="command Success!!";
+			char *no="command Failed!";
+			if(!ret) {
+				write(c_socket, ok, strlen(ok));
+				write(c_socket, tok, strlen(tok));
+			}
+			else{
+				write(c_socket, no, strlen(no));
+			}
+		}
+		else{
+		n = strlen(buffer);
+		write(c_socket, buffer, n);
+		}
+	}
+	close(c_socket);
 }
 
 void sig_handler(int signo){
