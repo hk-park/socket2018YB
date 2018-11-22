@@ -11,10 +11,11 @@
 //char buffer[100] = "hello, world\n";
 char buffer[BUFSIZE] = "Hi, I'm server\n";
 int pid = 18000;
-int s_socket;
-int c_socket;
+
 main( )
 {
+  int pid;
+  int c_socekt,s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
 	int   n;
@@ -38,7 +39,9 @@ main( )
 		return -1;
 	}
 	while(1){
-		c_socket = accept(s_socket,(struct sockaddr *) &c_addr, &len);
+	  len = sizeof(c_addr);
+	  c_socket = accept(s_socket,(struct sockaddr *) &c_addr, &len);
+	  printf("Client is connected\n");
 		if((pid = fork()) > 0){
 			close(c_socket);
 			continue;
@@ -49,18 +52,21 @@ main( )
 			exit(0);
 		}
 	}
+	close(s_socket);
 }
 do_service(int c_socket){
 	while(1){
 		int i = 0;
+		int n;
 		char *token;
 		char *str[3];
-		if(readSize = read(c_socket,rcvBuffer,sizeof(rcvBuffer))< 0 ){
-			exit(0);
-		}
-		//rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
-		//rcvBuffer[rcvLen] = '\0';
-		//printf("[%s] received\n", rcvBuffer);
+		char rcvBuffer[BUFSIZE];
+	       
+		rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
+		rcvBuffer[rcvLen] = '\0';
+		printf("[%s] received\n", rcvBuffer);
+		if(strncasecmp(rcvBuffer,"quit",4) || strncmp(rcvBuffer,"kill server",11))
+			break;	
 		else if(!strncmp(rcvBuffer,"안녕하세요", strlen("안녕하세요")))
 			strcpy(buffer,"안녕하세요 만나서 반가워요.");
 		else if(!strncmp(rcvBuffer,"이름이 머야?", strlen("이름이 머야?")))
@@ -119,12 +125,8 @@ do_service(int c_socket){
 				sprintf(buffer,"[%s] is execute",command);
 		}
 				
-	n = strlen(buffer);
-	write(c_socket,buffer,n);
+		n = strlen(buffer);
+		write(c_socket,buffer,n);
 	}
-	close(c_socket);
-	if(!strncasecmp(rcvBuffer, "kill server", 11))
-		break;
-	}	
-	close(s_socket);
+	close(c_socket);	
 }
