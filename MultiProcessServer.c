@@ -15,15 +15,17 @@ void sig_handler();
 int do_service(int c_socket);
 int connected = 0;
 int fd[2];
+int s_socket;
+
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 char buffer[1024] = "Hi, I'm server\n";
 int main( )
 {
-	int   c_socket, s_socket;
+	int c_socket;
 	struct sockaddr_in s_addr, c_addr;
-	int   len;
+	int len;
 	signal(SIGCHLD, sig_handler);
-	int   n;
+	int n;
 	int rcvLen;//rcv크기
 	char *send_buffer = (char*)malloc(sizeof(char)*100);
 	char rcvBuffer[100];//rcv버퍼
@@ -67,17 +69,23 @@ int main( )
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		printf("Client is connected\n");
-		printf("현재 %d개의 클라이언트가 접속했습니다.\n", ++connected);
-		if(fork() <= 0){
-			if(do_service(c_socket)<0)break;
+		connected++;
+		printf("현재 %d개의 클라이언트가 접속했습니다.\n", connected);
+		int pid = fork();
+		if(pid>0){
+			close(c_socket);
+			continue;
+		
+		}
+		else if(pid == 0){
+			close(s_socket);
+			do_service(c_socket);
+			exit(0);
 		}
 		else{
-			memset(rcvBuffer,0,sizeof(rcvBuffer));
-			read(fd[0],rcvBuffer,sizeof(rcvBuffer));
-			if(strncasecmp(rcvBuffer,"kill server",11)==0){
-				break;
-			}
+			printf("[ERROR] fork() error\n");
 		}
+		
 	}
 	close(s_socket);
 }
@@ -157,13 +165,20 @@ int do_service(int c_socket){
 	close(c_socket);
 
 	write(fd[1],rcvBuffer,rcvLen);
-	return 0;
 }
 
 void sig_handler(){
 	int pid;
 	int status;
+	char rcvBuffer[1000];
+
 	pid = wait(&status);
+	read(fd[0],rcvBuffer,sizeof(rcvBuffer));
 	printf("PID : %d is terminated Status = %s\n",pid,status);
 	printf("1개의 클라이언트가 접속이 종료되어 %d개의 클라이언트가 접속중입니다.\n",--connected);
+	if(strncasecmp(rcvBuffer,"kill server",11)==0){
+		printf("[SERVER] server closeing...\n");
+		close(s_socket);
+		exit(0);
+	}
 }
