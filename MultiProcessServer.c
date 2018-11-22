@@ -2,24 +2,26 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <sys/wait.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
 #define MAX 100
 //#define PORT 10000
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
-char buffer[100] = "Hi, I'm server\n";
-int i;
-int n;
-int pid;
-int   c_socket, s_socket;
-struct sockaddr_in s_addr, c_addr;
-int   len;
-int rcvLen;
-char rcvBuffer[100];
-int conn_s;
+char buffer[MAX] = "Hi, I'm server\n";
+int numClient=0;
+void do_service(int c_socket);
+void sig_handler();
  main( )
 {
+	int pid;
+	int c_socket,s_socket;
+	struct sockaddr_in s_addr, c_addr;
+	int len;
+	signal(SIGCHLD, sig_handler);
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
         memset(&s_addr, 0, sizeof(s_addr));
         s_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -39,6 +41,9 @@ int conn_s;
 	while(1) {
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
+		numClient++;
+		printf("client is connected\n");
+		printf("현재 %d개의 클라이언트가 접속하였습니다.\n", numClient);
 		if((pid=fork()) > 0){
 			close(c_socket);
 			continue;
@@ -49,19 +54,20 @@ int conn_s;
 		}
 	}
 }
-do_service(int c_socket){
-	while(1){
-		
-                //3-3.클라이언트가 접속했을 때 "Client is connected" 출력
-                printf("Client is connected\n");
-                                
+void do_service(int c_socket){
+		int n;
+		int rcvLen;
+		char rcvBuffer[MAX];
 		while(1){
+			int i=0;
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
                         rcvBuffer[rcvLen] = '\0';
                         printf("[%s] received\n", rcvBuffer);
+			if(strncasecmp(rcvBuffer,"quit",4)==0 || strncasecmp(rcvBuffer,"kill server",11)==0)
+				break;
 
 //5-1
-                        if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요")))
+                        else if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요")))
                                 strcpy(buffer, "안녕하세요. 만나서 반가워요");
 //5-2
 			
@@ -136,7 +142,15 @@ do_service(int c_socket){
 			}
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
-	}	
-	close(s_socket);
-	}
+		}
+	close(c_socket);
+}
+
+void sig_handler(int signo){
+	int pid;
+	int status;
+	numClient--;
+pid=wait(&status);
+	printf("pid[%d]is terminated. status=%d\n",pid, status);
+	printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어있습니다.\n",numClient);
 }	
