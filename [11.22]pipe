@@ -1,0 +1,38 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+int main()
+{
+	int fd[2]; // pipe로 사용할 파일디스크립터
+	char buf[55];
+	int pid;
+	
+	if(pipe(fd) <0) //파이프 생성 실패시 프로그램종료
+	{
+		printf("[ERROR] 파이프 에러 \n");
+		exit(0);
+	}
+
+	pid = fork();
+	if(pid > 0) 
+	{ //부모 프로세스
+	  //자식 프로세스가 파이프를 통해 값을 출력
+	 memset(buf,0x00, 255);
+	 read(fd[0], buf, sizeof(buf)); //read(읽기)때는 fd[0]를 사용 sizeof사용
+	 printf("[PARENT] chlid mase : %s\n",buf);
+	}
+	else if (pid == 0 )
+	{ //자식 프로세스
+	  //파이프를 통해 부모프로세스에게 값을 전달
+	  memset(buf,0x00, 255);//buf를 초기화
+	  sprintf(buf, "[%d] Hello, I.m child\n",getpid());
+	  write(fd[1], buf, strlen(buf)); //파이프배열은 wirte(쓰기)는 fd[1]사용 fd에  buf에 담은 내용을 넣겠다. strlen(buf) buf크기만큼  wirte는 strlen를사용
+	}
+	else
+	{
+		printf("[ERROR] fork() 실패");
+		exit(0);
+	}
+	
+}
