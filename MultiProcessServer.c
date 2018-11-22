@@ -2,6 +2,9 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <signal.h>
+#include <sys/wait.h>
+
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
 #define BUFSIZ 10000
@@ -10,6 +13,8 @@
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
 int do_service(int c_socket);
+void sig_handler();
+int servercount=0;
 
 main( )
 {
@@ -22,6 +27,9 @@ main( )
 	char rcvBuffer[100];
 	char buffer[BUFSIZ] = "Server is connected";
 	char *bf1,*bf2;
+	signal(SIGCHLD,sig_handler);
+
+
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -45,6 +53,7 @@ main( )
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
 		printf("Client is connected\n");
+		printf("현재 %d개의 클라이언트가 접속하였습니다.\n", ++servercount);
 		n = strlen(buffer);
 		write(c_socket, buffer, n);	
 		int pid = fork();
@@ -165,3 +174,13 @@ int do_service(int c_socket)
 	if(strncasecmp(rcvBuffer, "kill server", 11)==0) return 1;
 	return 0;
 }
+
+void sig_handler(int signo)
+{
+	int pid;
+	int status;
+	pid = wait(&status);
+	printf("pid[%d] terminalted, status = %d\n",pid,status);
+	printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n",--servercount);
+}
+
