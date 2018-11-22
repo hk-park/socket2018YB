@@ -3,6 +3,8 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
@@ -11,14 +13,16 @@
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[BUFSIZE] = "hello, world\n";
 char buffer[BUFSIZE] = "Hi, I'm server\n";
- 
+int numClient = 0; 
 void do_service(int c_socket);
+void sig_handler();
 main( )
 {
 	int pid;
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
+	signal(SIGCHLD, sig_handler); 
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -40,8 +44,10 @@ main( )
 	while(1) {
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
-        //3-3.클라이언트가 접속했을 때 "Client is connected" 출력
+        	//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
+        	numClient++;
         printf("Client is connected\n");
+	printf("현재 %d 개의 클라이언트가 접속하였습니다.\n", numClient);
         pid = fork();
         if(pid > 0){
             close(c_socket);
@@ -132,4 +138,12 @@ void do_service(int c_socket){
 		write(c_socket, buffer, n);
 	}
 	close(c_socket);
+}
+void sig_handler(){
+	int pid;
+	int status;
+	pid = wait(&status);
+	numClient--;
+	printf("pid[%d] is terminated. status = %d\n", pid, status);
+	printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n", numClient);
 }
