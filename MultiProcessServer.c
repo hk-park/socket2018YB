@@ -2,6 +2,10 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <sys/wait.h>
+
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
 //#define PORT 10000
@@ -11,13 +15,17 @@
 //char buffer[100] = "hello, world\n";
 char buffer[BUFSIZE] = "Hi, I'm server\n";
 int   c_socket, s_socket;
-do_service(int c_socket);
- 
+int numClient=0;
+
+void do_service(int c_socket);
+void sig_handler(); 
+
 main( )
 {
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
 	int pid;
+	signal(SIGCHLD, sig_handler);
 	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -39,7 +47,11 @@ main( )
 	while(1) {
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
-		if((pid = fork())>0) {
+		numClient++;
+		printf("Client is connected\n");
+		printf("현재 %d 개의 클라이언트가 접속하였습니다.\n", numClient);
+		pid = fork();
+		if(pid > 0) {
                         close(c_socket);
                         continue;
                 }
@@ -49,9 +61,10 @@ main( )
                         exit(0);
                 }
 	}
+	close(s_socket);
 }
 
-do_service(int c_socket){
+void do_service(int c_socket){
         int   n;
         int rcvLen;
         char rcvBuffer[BUFSIZE];
@@ -63,10 +76,8 @@ do_service(int c_socket){
 		rcvBuffer[rcvLen] = '\0';
 		printf("[%s] received\n", rcvBuffer);
 		
-		if(rcvLen < 0)
-			exit(0);
-                else if(!strcmp(rcvBuffer, "hello"))
-                        strcpy(buffer, "Hello");	
+		if(strncasecmp(rcvBuffer, "quit", 4)==0)
+			break;
 		//예제5-1
 		else if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요"))){
 			strcpy(buffer, "안녕하세요. 만나서 반가워요.");
@@ -134,11 +145,18 @@ do_service(int c_socket){
        			else
                			sprintf(buffer, "[%s] 명령어가 실패하였습니다.", command);
 		}
-		else {
+		else 
 			strcpy(buffer, "무슨 말인지 모르겠습니다.");
-			n = strlen(buffer);
-			write(c_socket, buffer, n);
-		}
-		close(c_socket);
-	}	
+		n = strlen(buffer);
+		write(c_socket, buffer, n);
+	}
+	close(c_socket);
+}
+void sig_handler() {
+	int pid;
+	int status;	// 자식 프로세스의 상태 확인
+	pid = wait(&status);
+	numClient--;
+	printf("pid[%d] is terminated. status = %d\n", pid, status);
+	printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n", numClient);
 }
