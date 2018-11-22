@@ -5,10 +5,11 @@
 
 int main(){
 	int fd[2];//pipe로 사용할 파일디스크립터
+	int fd1[2];
 	char buf[255];
 	int pid;
 	
-	if(pipe(fd) < 0){//pepi 생성. 실패 시, 프로그램  종료
+	if(pipe(fd) < 0 || pipe(fd1) < 0){//pepi 생성. 실패 시, 프로그램  종료
 		printf("[ERROR] pipe error\n");
 		exit(0);
 	}
@@ -19,12 +20,17 @@ int main(){
 		memset(buf, 0x00, 255);
 		read(fd[0], buf, sizeof(buf));
 		printf("[PARENT] child message: %s\n", buf);
+		memset(buf, 0x00, 255);
+		sprintf(buf, "[%d] Hello, I'm Parent.", getpid());
+		write(fd1[1], buf, strlen(buf));
 	}else if(pid == 0){
 		//자식 프로세스
 		//파이프를 통해 부모 프로세스에게 값을 전달
 		memset(buf, 0x00, 255);
-		sprintf(buf, "[%d] Hello. I'm Client.", getpid());
+		sprintf(buf, "[%d] Hello, I'm Child.", getpid());
 		write(fd[1], buf, strlen(buf));
+		read(fd1[0], buf, sizeof(buf));
+		printf("[CHILD] parent message: %s\n", buf);
 	}else{
 		printf("[ERROR] fork() failed\n");
 		exit(0);
