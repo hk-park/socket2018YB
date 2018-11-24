@@ -5,21 +5,25 @@
 #include <malloc.h>
 #include <signal.h>
 #include <sys/wait.h>
+
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 10000
 #define MAX 10000
+
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 char buffer[MAX];
 int   c_socket, s_socket;
 struct sockaddr_in s_addr, c_addr;
 int pid;
-int   len;
-int   n;
+int len;
+int n;
 int rcvLen;
 char rcvBuffer[MAX];
 char *token;
 int i=0;
 int numClient=0;
+int fd[2];
+
 void sig_handler();
 void do_service(int c_socket);
 
@@ -42,6 +46,11 @@ main( )
                 printf("listen Fail\n");
                 return -1;
         }
+	
+	if(pipe(fd)<0){ //pipe 생성. 생성 실패 시, 프로그램 종료 
+		printf("[ERROR] pipe error\n");
+		exit(0);
+	}
 
 	while(1) {
 		len = sizeof(c_addr);
@@ -68,8 +77,11 @@ void do_service(int c_socket){
 			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
 			rcvBuffer[rcvLen] = '\0';
 			printf("[%s] received\n", rcvBuffer);
-			if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
+			if(strncasecmp(rcvBuffer, "quit", 4) == 0)
 				break;
+			else if(strncasecmp(rcvBuffer, "kill server", 11) == 0){
+				write(fd[1], rcvBuffer, strlen(rcvBuffer));	
+			}
 			else if(!strncmp(rcvBuffer,"안녕하세요.",strlen("안녕하세요."))){
 			//두개의 인자 값의 차이가 없으면 0으로 리턴됨. = (strcmp(rcvBuffer, "안녕하세요.", strlen("안녕하세요."))==0)
 				strcpy(buffer, "안녕하세요, 만나서 반가워요.\n"); 
@@ -140,8 +152,17 @@ void do_service(int c_socket){
 void sig_handler(){
 	int pid;
 	int status;
+	char rcvBuffer[MAX];
 	pid = wait(&status); //프로그램의 자원이 다 회수되고 정상적으로 끝나기를 기다리는 함수. 비정상적이면 에러코드 반환
 	numClient--;
 	printf("pid[%d] is terminated status = %d\n", pid, status);
-        printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.",numClient);
+        printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n",numClient);
+
+	read(fd[0],rcvBuffer,sizeof(rcvBuffer));
+	if(strncasecmp(rcvBuffer,"kill server",11)==0){
+		printf("The server is closed.\n");
+                kill(pid, SIGKILL);
+                close(s_socket);
+		exit(0);
+	}
 }
