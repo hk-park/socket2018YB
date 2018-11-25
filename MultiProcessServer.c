@@ -174,8 +174,8 @@ void sig_handler() {
 	printf("pid[%d] is terminated. status = %d\n", pid, status);
 	printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n", numClient);
 	
-	read(fd[0], rcvBuffer, sizeof(rcvBuffer));
 	//kill server 구현
+	read(fd[0], rcvBuffer, sizeof(rcvBuffer));
 	if(!strncasecmp(rcvBuffer, "kill server", 11)) {
 		printf("[SERVER] kill server\n");
 		close(s_socket);
