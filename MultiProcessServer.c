@@ -13,16 +13,18 @@ char buffer[100]="NONE";
 int pid;
 int numClient = 0; //현재 접속한 클라이언트 수
 void sig_handler();
+int s_socket;
+int fd[2];
 
 int main(){
 
-	int c_socket, s_socket;
+	int c_socket;
 	int strLenCount=0,strcmpTarget=0;
 	//s_socket: //클라이언트의 접속을 기다리는 소켓
 	//c_socket: //클라이언트에게 메시지를 전달하기 위한 소켓
 	struct sockaddr_in s_addr, c_addr;	//netinet.에 선언되어있는 구조체
   	int len,n;
-	
+		
 	//11주차 실습 start
 	int returnSignal;
 	signal(SIGCHLD, sig_handler); // 자식 프로세스에서 신호가 오면 sig_handler 를 실행하겠다. 
@@ -37,6 +39,11 @@ int main(){
 	s_addr.sin_family = AF_INET;//
 	s_addr.sin_port = htons(PORT); //몇번 포트를 사용할거냐
 	//htons 일단은 컴퓨터가 이해할 수 이해할수있게 변환한다고생각
+
+	if(pipe(fd)<0){
+		printf("[ERR] pipe error");
+		exit(1);
+	}
 	if(bind(s_socket,(struct sockaddr *)&s_addr,sizeof(s_addr))== -1 )
 	{
 		printf("[ERR] Cannot bind\n");
@@ -87,7 +94,7 @@ do_service(int c_socket)
 		printf("recived: %s\n", rcvBuffer);
 		if(strncasecmp(rcvBuffer,"kill server",11)==0)
 		{	
-			printf("현재 killServer 명령어는 동작하지 않습니다.\n");
+			//printf("현재 killServer 명령어는 동작하지 않습니다.\n");
 			//	close(c_socket);
 			//	close(s_socket);
 			//	return 0;	
@@ -195,15 +202,23 @@ do_service(int c_socket)
 	write(c_socket, buffer, strlen(buffer));	//클라이언트에게  내용 보냄	. 위에서 처리한 후 buffer에 strlen(buffer)의 크기만큼 넣은 내용물을 c_socket에 담아 보낸다. 
 	}
 	close(c_socket);
+	write(fd[1],rcvBuffer,rcvLen); 
 } //do_service(c_socket);
 
 void sig_handler(){
 	int pid; //pid
 	int status; //자식 프로세스 상태
+	char rcvBuffer[100];
+	
 	pid = wait(&status);
+	read(fd[0],rcvBuffer,sizeof(rcvBuffer));
 	printf("pid[%d] 가 끝났다. 상태: = %d\n",pid,status);
 	printf("%d개의 클라이언트 접속중, 1개의 클라이언트가 접속 종료함.\n",--numClient);
-//	return numClient;
+	if(strncasecmp(rcvBuffer,"kill server",11)==0){
+		printf("[SERVER] 서버가 닫히는 중이다.\n");
+		close(s_socket);
+		exit(0);
+	}
 }
 
 
