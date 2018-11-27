@@ -19,9 +19,8 @@ int main(){
 		     read(fd[0],buf,sizeof(buf));
 		     printf("[PARENT] child message %s\n",buf);
 		     
-		     memset(buf,0x00,255);
 		     sprintf(buf,"Hello, I'm parent.",getpid());
-                     write(fd2[1],buf,strlen(buf));
+             write(fd2[1],buf,strlen(buf));
 
 	}else if(pid == 0){  
 		     //자식 프로세스
@@ -29,8 +28,9 @@ int main(){
 		     
 		     memset(buf, 0x00,255);
 		     sprintf(buf, "[%d] Hello, I'm child.\n",getpid());
-		     read(fd2[0],buf,sizeof(buf));
 		     write(fd[1],buf,strlen(buf));
+
+			 read(fd2[0],buf,sizeof(buf));
 		     printf("[Child] parent message %s\n",buf);
 		     
 	}else{
