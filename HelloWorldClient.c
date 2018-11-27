@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <string.h>
 
-#define PORT 9000
+#define PORT 10000
 #define IPADDR "127.0.0.1"
 #define BUFSIZE 10000
 int main(){
