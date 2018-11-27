@@ -13,12 +13,13 @@
 char buffer[BUFSIZE] = "Hi, I'm server\n";
 int countC =0;
 void sig_handler();
+int fd[2];
+int   c_socket, s_socket;
 
 main( )
 {
 	
 
-	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
 	int   n;
@@ -44,6 +45,11 @@ main( )
 	if(listen(s_socket, 5) == -1) {
 		printf("listen Fail\n");
 		return -1;
+	}
+
+	if(pipe(fd)<0) { //pipe생성. 생성 실패 시, 프로그램 종료
+		printf("[ERROR] pipe error");
+		exit(0);
 	}
  	
 	while(1) {
@@ -139,16 +145,23 @@ do_service(int c_socket){
 			n = strlen(buffer);
 			write(c_socket, buffer, n);
 		}
+		write(fd[1], rcvBuffer, rcvLen);
 		close(c_socket);
-		if(!strncasecmp(rcvBuffer, "kill server", 11))
-			exit(0);
 }
 
 void sig_handler(){
 	int pid;
 	int status;
+	char rcvBuffer[BUFSIZE];
 	countC--;
 	pid=wait(&status);
 	printf("pid[%d] is terminated. status = %d\n", pid, status);
 	printf("1 client is closed, now %d client\n", countC);
+
+	read(fd[0], rcvBuffer, sizeof(rcvBuffer));
+	if(!strncasecmp(rcvBuffer, "kill server", 11)) {
+		printf("[SERVER] kill server\n");
+		close(s_socket);
+		exit(0);
+	}
 }
