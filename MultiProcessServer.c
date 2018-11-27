@@ -15,6 +15,10 @@ char buffer[BUFSIZE] = "Hi, I'm server\n";
 int numClient = 0;
 void do_service(int c_socket);
 void sig_handler();
+int fd[2];
+int s_socket;
+char rcvBuffer[BUFSIZE];
+
 main( )
 {
  int pid;
@@ -39,6 +43,9 @@ main( )
   printf("listen Fail\n");
   return -1;
  }
+if(pipe(fd)<0){
+printf("pipe error");
+}
   
  while(1) {
   len = sizeof(c_addr);
@@ -63,8 +70,7 @@ main( )
 void do_service(int c_socket){
  int   n;
  int rcvLen;
- char rcvBuffer[BUFSIZE];
- while(1){
+  while(1){
   char *token;
   char *str[3];
   int i = 0;
@@ -144,4 +150,11 @@ void sig_handler(){
  numClient--;
  printf("pid[%d] is terminated. status = %d\n", pid, status);
  printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n", numClient);
+
+read(fd[0],rcvBuffer,sizeof(rcvBuffer));
+if(!strncasecmp(rcvBuffer,"kill server",11)){
+printf("kill server\n");
+close(s_socket);
+exit(0);
+}
 }
