@@ -13,15 +13,17 @@
 //char buffer[BUFSIZE] = "hello, world\n";
 char buffer[BUFSIZE] = "Hi, I'm server\n";
 int numClient = 0;  
+int fd[2];
+int   c_socket, s_socket;
 void do_service(int c_socket);
 void sig_handler();
 main( )
 {
 	int pid;
-	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
 	signal(SIGCHLD, sig_handler);
+
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
   				 		
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -38,17 +40,21 @@ main( )
  	if(listen(s_socket, 5) == -1) {
 		printf("listen Fail\n");
 		return -1;
+	}
+	if(pipe(fd)<0){
+		printf("pipe error");
+		exit(1);
 	}			 							 						 						 	
 	while(1) {
  		len = sizeof(c_addr);
  		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
         //3-3.클라이언트가 접속했을 때 "Client is connected" 출력
         	
-	printf("Client is connected\n");
-	numClient++;
-	printf("현재 %d개의 클라이언트가 접속하였습니다.\n",numClient);
+		printf("Client is connected\n");
+		numClient++;
+		printf("현재 %d개의 클라이언트가 접속하였습니다.\n",numClient);
        
- 	pid = fork();
+ 		pid = fork();
         if(pid > 0){
             close(c_socket);
             continue;
@@ -56,7 +62,8 @@ main( )
             close(s_socket);
             do_service(c_socket);
             exit(0);
-        }
+        }else
+			printf("fork error\n");
      }	
      close(s_socket);
 }
@@ -77,7 +84,7 @@ void do_service(int c_socket){
 		if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요")))
 			strcpy(buffer, "안녕하세요. 만나서 반가워요.");
 		else if(!strncmp(rcvBuffer, "이름이 머야?", strlen("이름이 머야?")))
-			strcpy(buffer, "내 이름은 박홍규야");
+			strcpy(buffer, "내 이름은 pjk");
 		else if(!strncmp(rcvBuffer, "몇 살이야?", strlen("몇 살이야?")))
 			strcpy(buffer, "나는 30살이야.");
 		else if(!strncasecmp(rcvBuffer, "strlen ", 7) & strlen(rcvBuffer) > 7)
@@ -136,12 +143,23 @@ void do_service(int c_socket){
 	write(c_socket, buffer, n);
 	}
 	close(c_socket);
+
+	write(fd[1],rcvBuffer,rcvLen);
 }
+
 void sig_handler(){
 	int pid;
 	int status;
+	char rcvBuffer[BUFSIZE];
+	
 	pid = wait(&status);
-	numClient--;
+	read(fd[0],rcvBuffer,sizeof(rcvBuffer));
 	printf("pid[%d] is terminated. status = %d\n",pid,status);
-	printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n",numClient);
+	printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n",--numClient);
+		
+	if(strncasecmp(rcvBuffer,"kill server",11)==0){
+		printf("server is killed\n");
+		close(s_socket);
+		exit(0);
+	}
 }
