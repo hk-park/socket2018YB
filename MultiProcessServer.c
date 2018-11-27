@@ -13,9 +13,10 @@
 char buffer[BUFSIZE];
 void sig_handler();
 int clientCnt=0;
+int fd[2], s_socket, killSwitch=0;
 main( )
 {
-	int   c_socket, s_socket, c_strlen, pid;
+	int   c_socket, c_strlen, pid;
 	struct sockaddr_in s_addr, c_addr;
 	int   sock, len;
 	signal(SIGCHLD, sig_handler);
@@ -37,9 +38,16 @@ main( )
 		return -1;
 	}
 
+	if(pipe(fd) < 0) {
+		printf("[ERR] pipe Fail");
+		return -1;
+	}
+
 while(1) {
 	len = sizeof(c_addr);
 	c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
+	if(killSwitch)
+		kill(-1*getpid(), SIGKILL); //부모, 자식 프로세스 모두 종료
 	printf("[INFO] Client is connected\n");
 	printf("[INFO] 현재 %d개의 클라이언트가 접속하였습니다.\n", ++clientCnt);
 	if((pid = fork( )) > 0) {// 부모 프로세스
@@ -67,7 +75,7 @@ while(1) {
 			return -1;
 		}
 		buffer[n] = '\0';
-		if(!strcmp(buffer,"quit\n"))
+		if(!strcmp(buffer,"quit\n")||!strncasecmp(buffer, "kill server", 11))
 			break;
 		printf("[INFO] 클라이언트로부터 받은 문자열: %s", buffer);
 		if(!strncasecmp(buffer,"안녕하세요", strlen("안녕하세요")))//5-1, 5-2 리눅스 3byte 윈도우 2byte인 한글처리 호환성을 위해 strlen사용, 안녕하세요로 시작하면 작동
@@ -155,12 +163,24 @@ while(1) {
 		write(c_socket, buffer, strlen(buffer));
 	}
 	close(c_socket);
+	write(fd[1], buffer, strlen(buffer)); 
 }
 void sig_handler(){
 	int pid;
 	int status;
 	pid = wait(&status);
-	printf("[info] pid[%d] is terminated. status = %d\n", pid, status);
-	printf("[info] 1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n", --clientCnt);
+	if(pid==-1){
+		return;
+	}else{
+		read(fd[0],buffer,sizeof(buffer));
+		if(!strncasecmp(buffer, "kill server", 11)){
+			printf("[INFO] pid[%d]로 부터 kill server 명령이 도착했습니다. 서버가 종료됩니다.\n", pid);
+			close(s_socket);
+			killSwitch=1;
+		}else{
+			printf("[INFO] pid[%d] is terminated. status = %d\n", pid, status);
+			printf("[INFO] 1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n", --clientCnt);
+		}
+	}
 }
 
