@@ -42,6 +42,10 @@ main( )
 		printf("listen Fail\n");
 		return -1;
 	}
+
+	if(pipe(fd)<0){
+	printf("pipe 에러");
+	}
  	
 	while(1) {
 		len = sizeof(c_addr);
