@@ -17,7 +17,8 @@ int main(){
 		//자식프로세스가 파이프를 통해 전달하는 값을  출력
 		memset(buf, 0x00, 255);
 		read(fd[0], buf, sizeof(buf));
-		printf("[PARENT] child message: %s", buf);
+		printf("[PARENT] child message: %s\n", buf);
+		
 		memset(buf, 0x00, 255);
 		sprintf(buf,"[%d]Hello.I'm parent",getpid());
 		write(fd2[1], buf, strlen(buf));
@@ -26,8 +27,11 @@ int main(){
 		//파이프를 통해 부모 프로세스에게 값을  전달
 		memset(buf, 0x00, 255);
 		sprintf(buf,"[%d]Hello,I'm child", getpid());
-		read(fd2[1], buf, sizeof(buf));
 		write(fd[1], buf, strlen(buf));
+
+		memset(buf, 0x00, 255);
+		read(fd2[0], buf, sizeof(buf));
+		printf("[CHILD] parent message: %s\n", buf);
 	}else{
 		printf("[ERROR]fork() failed\n");
 		exit(0);

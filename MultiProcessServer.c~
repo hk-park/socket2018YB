@@ -3,7 +3,6 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <signal.h>
-#include <stdlib.h>
 #include <sys/wait.h>
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
@@ -144,7 +143,6 @@ main( )
 		
 	}
 	close(c_socket);
-	write(fd[1],rcvBuffer,rcvLen);
 }
 void sig_handler(){
 	int pid;
@@ -156,7 +154,6 @@ void sig_handler(){
 	printf("1개의 클라이언트가 종료되어 %d개의 클라이언트가 접속되어 있습니다.",count);
 	read(fd[0],rcvBuffer,sizeof(rcvBuffer));
 	if(!strncasecmp(rcvBuffer,"kill server ",11)){
-		printf("kill server\n");
 		close(s_socket);
 		exit(0);
 	}
