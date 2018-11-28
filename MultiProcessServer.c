@@ -15,10 +15,10 @@
 int do_service(int c_socket);
 void sig_handler();
 int servercount=0;
-
+int fd[2];
+int   c_socket, s_socket;
 main( )
 {
-	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
 	int   n;
@@ -27,17 +27,20 @@ main( )
 	char rcvBuffer[100];
 	char buffer[BUFSIZ] = "Server is connected";
 	char *bf1,*bf2;
-	signal(SIGCHLD,sig_handler);
 	
-
+	
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
+	signal(SIGCHLD,sig_handler);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
 	//s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	s_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	s_addr.sin_family = AF_INET;
 	s_addr.sin_port = htons(PORT);
- 
+	if(pipe(fd)<0){
+		printf("[ERROR] pipe");
+		exit(0);
+	}
 	if(bind(s_socket, (struct sockaddr *) &s_addr, sizeof(s_addr)) == -1) {
 		printf("Can not Bind\n");
 		return -1;
@@ -62,11 +65,13 @@ main( )
 			continue;
 		}
 		else if(pid == 0){
-			if(do_service(c_socket)) break;
+			do_service(c_socket);
 		}
 	
 	}	
+//	killserver = 1;
 	close(s_socket);
+	//kill(getppid(),SIGKILL);
 }
 int do_service(int c_socket)
 {
@@ -170,17 +175,33 @@ int do_service(int c_socket)
 		write(c_socket, buffer, n);
 		
 	}
-	close(c_socket);
-	if(strncasecmp(rcvBuffer, "kill server", 11)==0) return 1;
-	return 0;
+
+	if(strncasecmp(rcvBuffer, "kill server", strlen("kill server"))==0){
+		write(c_socket, rcvBuffer, rcvLen);
+		write(fd[1],rcvBuffer,rcvLen);
+		close(c_socket);
+		return 1;
+	}
+	else{
+		close(c_socket);
+		return 0;
+	}
 }
 
 void sig_handler(int signo)
 {
 	int pid;
 	int status;
+	char buf[BUFSIZ];
 	pid = wait(&status);
 	printf("pid[%d] terminalted, status = %d\n",pid,status);
 	printf("1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n",--servercount);
+	read(fd[0],buf,sizeof(buf));
+	//printf("%s\n",buf);
+	if(strncmp(buf, "kill server", strlen("kill server"))==0){
+		printf("server die\n");
+		close(s_socket);
+		exit(0);
+	}
 }
 
