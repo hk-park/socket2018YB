@@ -15,6 +15,7 @@ int numClient = 0; //현재 접속한 클라이언트 수
 void sig_handler();
 int s_socket;
 int fd[2];
+int processKill = 0;
 
 int main(){
 
@@ -58,9 +59,12 @@ int main(){
 
 	while(1)
 	{	
-			
+		if(processKill)
+			kill(-1*getpid(), SIGKILL); //부모, 자식 프로세스 모두 종료
 		len = sizeof(c_addr);	
 		c_socket = accept(s_socket, (struct sockaddr*)&c_addr, &len);//클라이언트가 접속할때까지 대기
+	
+
 		printf("현재 %d 명의 클라이언트 접속중 \n",++numClient); //1 더하고 출력 
 					
 		if((pid = fork()) > 0)  //부모 프로세스는 accept를 받으면 자신을 fork()해서 
@@ -94,10 +98,7 @@ do_service(int c_socket)
 		printf("recived: %s\n", rcvBuffer);
 		if(strncasecmp(rcvBuffer,"kill server",11)==0)
 		{	
-			//printf("현재 killServer 명령어는 동작하지 않습니다.\n");
-			//	close(c_socket);
-			//	close(s_socket);
-			//	return 0;	
+			
 			break;
 		} 
 		else if(strncasecmp(rcvBuffer,"quit",4)==0)
@@ -208,16 +209,19 @@ do_service(int c_socket)
 void sig_handler(){
 	int pid; //pid
 	int status; //자식 프로세스 상태
-	char rcvBuffer[100];
-	
 	pid = wait(&status);
-	read(fd[0],rcvBuffer,sizeof(rcvBuffer));
-	printf("pid[%d] 가 끝났다. 상태: = %d\n",pid,status);
-	printf("%d개의 클라이언트 접속중, 1개의 클라이언트가 접속 종료함.\n",--numClient);
-	if(strncasecmp(rcvBuffer,"kill server",11)==0){
-		printf("[SERVER] 서버가 닫히는 중이다.\n");
-		close(s_socket);
-		exit(0);
+	if(pid==-1){ //exec 전용, 끊지말고 리턴
+		return;
+	}else{ //아니라면 
+		read(fd[0],buffer,sizeof(buffer));
+		if(!strncasecmp(buffer, "kill server", 11)){
+			printf("[INFO] pid[%d]로 부터 kill server 명령이 도착했습니다. 서버가 종료됩니다.\n", pid);
+			close(s_socket);
+			processKill=1;
+		}else{
+			printf("[INFO] pid[%d] is terminated. status = %d\n", pid, status);
+			printf("[INFO] 1개의 클라이언트가 접속종료되어 %d개의 클라이언트가 접속되어 있습니다.\n", --numClient);
+		}
 	}
 }
 
