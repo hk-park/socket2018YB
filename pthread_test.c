@@ -28,4 +28,5 @@ void *func_pthread(void *argv){
 		i++;
 		printf("thread %dth executing.... \n",i);
 	}
+	
 }
