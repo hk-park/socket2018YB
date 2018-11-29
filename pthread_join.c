@@ -36,5 +36,4 @@ void *do_sum(void *val){
 		sleep(1);
 	}
 	printf("%d -sum is %d \n",max,sum);
-
 }
