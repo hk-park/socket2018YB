@@ -14,7 +14,7 @@ pthread_mutex_t mutex;
 #define CHATDATA 1024
 #define INVALID_SOCK -1
 #define PORT 9000
-int    list_c[MAX_CLIENT];
+int    list_c[MAX_CLIENT]; //접속한 클라이언트를 관리하는 배열
 char    escape[ ] = "exit";
 char    greeting[ ] = "Welcome to chatting room\n";
 char    CODE200[ ] = "Sorry No More Connection\n";
@@ -47,7 +47,7 @@ int main(int argc, char *argv[ ])
     while(1) {
         len = sizeof(c_addr);
         c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
-        res = pushClient(c_socket);
+        res = pushClient(c_socket); //접속한 클라이언트를 list_c에 추가
         if(res < 0) { //MAX_CLIENT만큼 이미 클라이언트가 접속해 있다면,
             write(c_socket, CODE200, strlen(CODE200));
             close(c_socket);
