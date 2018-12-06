@@ -12,6 +12,8 @@
 //char buffer[100] = "hello, world\n";
 char buffer[BUFSIZE];
 void* do_service (void *data);
+int numClient=0;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 main( )
 {
 	int   c_socket, s_socket;
@@ -43,10 +45,14 @@ main( )
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		thr_id = pthread_create(&pthread, NULL, do_service, (void *)&c_socket);
-
-		printf("[INFO] Client is connected\n");
+								//스레드 주소값, 속성, 수행함수명, 함수인자값
+		pthread_mutex_lock(&mutex);
+		numClient++;
+		pthread_mutex_unlock(&mutex);
+		printf("[INFO] %dth Client is connected\n", numClient);
 
 	}
+	pthread_mutex_destroy(&mutex);
 	close(s_socket);
 }
 
@@ -151,6 +157,10 @@ void* do_service (void *data){
 			strcpy(buffer, "뭐라는지 잘 모르겠어요.\n");//기본응답
 		write(c_socket, buffer, strlen(buffer));
 	}	
+	pthread_mutex_lock(&mutex);
+	numClient--;
+	pthread_mutex_unlock(&mutex);
+	printf("[INFO] 현재 %d개의 클라이언트가 접속 중입니다\n", numClient);
 	close(c_socket);
 }
 
