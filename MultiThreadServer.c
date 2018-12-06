@@ -11,7 +11,10 @@
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
 char buffer[BUFSIZE] = "Hi, I'm server\n";
-void do_service(void *data);
+void *do_service(void *argv);
+int numClient = 0;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 main( )
 {
 	int   c_socket, s_socket;
@@ -22,7 +25,7 @@ main( )
 	char rcvBuffer[BUFSIZE];
 	
 	pthread_t pthread;
-	int thr_id;
+	int status;
 
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
@@ -46,17 +49,21 @@ main( )
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
-		printf("Client is connected\n");
-
-		thr_id = pthread_create(&pthread, NULL, do_service, (void *)&c_socket);
+		pthread_mutex_lock(&mutex);
+		numClient++;
+		pthread_mutex_unlock(&mutex);
+		printf("%dth Client is connected\n", numClient);
+		status = pthread_create(&pthread, NULL, do_service, (void *)&c_socket);
 	}
+	pthread_mutex_destroy(&mutex);
+	close(s_socket);
 }
 
-void do_service(void *data) {
+void *do_service(void *argv) {
 	int n;
 	char rcvBuffer[BUFSIZE];
 	int rcvLen;
-	int c_socket=*((int *)data);
+	int c_socket=*((int *)argv);
 	while(1){
 		char *token;
 		char *str[3];
@@ -138,7 +145,9 @@ void do_service(void *data) {
 		n = strlen(buffer);
 		write(c_socket, buffer, n);
 	}
-	close(c_socket);
-	if(!strncasecmp(rcvBuffer, "kill server", 11))
-		break;	
+	
+	pthread_mutex_lock(&mutex);
+	numClient--;
+	pthread_mutex_unlock(&mutex);
+	printf("현재 %d개의 클라이언트가 접속 중입니다\n", numClient);
 }
