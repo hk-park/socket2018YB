@@ -18,8 +18,10 @@ int rcvLen;
 char rcvBuffer[MAX];
 char *token;
 int i=0;
-pthread_t pthread;
 int thr_id;
+int numClient;
+pthread_t pthread;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 main( )
 {
@@ -41,10 +43,13 @@ main( )
 	while(1) {
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
+		pthread_mutex_lock(&mutex);
+		numClient++;
+		pthread_mutex_unlock(&mutex);
+		printf("%dth Client is connected",numClient);
 		thr_id = pthread_create(&pthread, NULL, do_service, (void *)&c_socket);
-		if(!strncasecmp(rcvBuffer, "kill server", 11))
-			break;
 	}
+	pthread_mutex_destroy(&mutex);
 	close(s_socket);
 }
 void *do_service(void *data){
@@ -122,5 +127,6 @@ void *do_service(void *data){
                         n = strlen(buffer);
                         write(c_socket, buffer, n);
         }
+	printf("현재 %d명의 클라이언트가 접속중입니다.",numClient);
         close(c_socket);
 }
