@@ -8,13 +8,15 @@
 #define PORT 9000
 #define BUFSIZE  10000
 int numClient = 0;
+pthread_mutex_t mutex =PTHREAD_MUTEX_INITIALIZER;
 void *do_service(void *data);
 main( )
 {
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
-    pthread_t p_thread;
+    	pthread_t pthread;
+	int status;
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
 	memset(&s_addr, 0, sizeof(s_addr));
@@ -36,12 +38,14 @@ main( )
 	while(1) {
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
-		
-        numClient++;
-        printf("%dth client is connected\n", numClient);
+		pthread_mutex_lock(&mutex);
+        	numClient++;
+		pthread_mutex_unlock(&mutex);
+        	printf("%dth client is connected\n", numClient);
         
-        pthread_create(&p_thread, NULL, do_service, (void *)&c_socket);
-	}	
+        status=pthread_create(&pthread, NULL, do_service, (void *)&c_socket);
+	}
+	pthread_mutex_destroy(&mutex);	
 	close(s_socket);
 }
 
@@ -122,7 +126,11 @@ void *do_service(void *data){
         write(c_socket, buffer, n);
     }
     close(c_socket);
+    pthread_mutex_unlock(&mutex);
     numClient--;
+    pthread_mutex_lock(&mutex);
+
+    printf("현재 %d개의 클라이언트가 접속중입니다.\n",numClient);
 }
 
 
