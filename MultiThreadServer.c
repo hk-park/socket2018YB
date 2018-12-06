@@ -6,27 +6,21 @@
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
 //#define PORT 10000
- 
+#define BUFSIZE 10000 
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
-//char buffer[100] = "hello, world\n";
-char buffer[100] = "Hi\n";
-
-	int s_socket,c_socket;
-        struct sockaddr_in s_addr, c_addr;
-        int   len;
-        int   n, tn;
-
-        pthread_t pthread;
-        int thr_id;
-        int rcvLen;
-        char rcvBuffer[100];
-        char *t1,*t2,*token;
-        char i[100];
-        char str[100];
+//char buffer[100] = "hello, world\n";#define BUFSIZE  10000
+char buffer[BUFSIZE] = "Hi, I'm server\n";
+int numClient = 0;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+void *do_service(void *argv);
  
 main( )
-{	int s_socket,c_socket;
+{	
+	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
+	int   len;
+	pthread_t pthread;
+	int status;
 
  	s_socket = socket(PF_INET, SOCK_STREAM, 0);
 	
@@ -50,128 +44,95 @@ main( )
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
-		printf("Client is connected\n");
-
-		thr_id = pthread_create(&pthread,NULL,do_service,(void *)&c_socket);
-		}
+		pthread_mutex_lock(&mutex);
+		numClient++;
+		pthread_mutex_unlock(&mutex);
+		printf("%dth Client is connected\n", numClient);
+		status = pthread_create(&pthread, NULL, do_service, (void *)&c_socket);
 	}	
-	void *do_service(void *data)
-	{
-        	char rcvBuffer[BUFSIZ];
-	        int   n, tn;
-		int c_socket=*((int*)data);
-
-		while(1){
-			rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
-			rcvBuffer[rcvLen] = '\0';
-			printf("[%s] received\n", rcvBuffer);
-			if(strncasecmp(rcvBuffer, "quit", 4) == 0
-			 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
-				break;
-		if(strncasecmp(rcvBuffer,"안녕하세요",strlen("안녕하세요"))==0){
-			strcpy(i,"안녕하세요. 만나서 반가워요.\n");
-			write(c_socket,i,strlen(i));
-		}
-		else if(strncasecmp(rcvBuffer,"이름이 뭐야?",
-					strlen("이름이 뭐야?"))==0){
-                        strcpy(i,"내 이름은 서버야.\n");
-                        write(c_socket,i,strlen(i));
-                }       
-		else if(strncasecmp(rcvBuffer,"몇 살이야",
-					strlen("몇 살이야"))==0){
-                        strcpy(i,"나는 20살이야.\n");
-                        write(c_socket,i,strlen(i));
-                }
-		else if(strncasecmp(rcvBuffer,"strlen",strlen("strlen"))==0){
-			sprintf(i,"%d\n",strlen(rcvBuffer)-7);
-			write(c_socket,i,strlen(i));
-		}       
-		else if(strncasecmp(rcvBuffer,"strcmp",strlen("strcmp"))==0){
-		//	strtok(rcvBuffer," ");
-		//	t1 = strtok(NULL, " ");
-		//	t2 = strtok(NULL, " ");
-		//	tn = strcmp(t1,t2);
-		//	sprintf(i,"%d\n",tn);
-		//	write(c_socket,i,strlen(i));
-			*token=0;
-			char *str[3];
-			int num = 0;
-			token = strtok(rcvBuffer," ");
-			while(token !=NULL){
-				str[num++] = token;
-				token = strtok(NULL," ");
-			write(c_socket,i,strlen(i));
-			}
-		if(num<3)
-			sprintf(i,"문자열 비교를 위해 두 문자열이 필요합니다.");
-		 else if(!strcmp(str[1],str[2]))//같은 문자열이면,
-			sprintf(i,"%s와 %s는 같은 문자열입니다.",str[1],str[2]);
-		 else  
-			sprintf(i,"%s와 %s는 다른 문자열입니다.",str[1],str[2]);
-		}
-
-
-		else if(strncasecmp(rcvBuffer, "readfile ", 9) == 0){
-				char *token;  
- 				FILE *fp;  
-				char buffer[200];  
-				strtok(rcvBuffer, " ");  
-				token = strtok(NULL, " ");  
- 				fp = fopen(token, "r");  
-				if(fp){  
-					while(fgets(rcvBuffer, 100, (FILE *)fp))  
-					write(c_socket, i, strlen(i));  
-				}  
-				
-			}  
-			else if(strncasecmp(rcvBuffer, "exec ", 5) == 0){ 
-				char *token; 
- 				strtok(rcvBuffer, " ");  
-				token = strtok(NULL, "\0");  
-				int ret = system(token);  
-				char *exe="command is executed";  
-				char *fail="command failed";  
- 				if(!ret){ 
- 					write(c_socket, exe, strlen(exe));
-					printf("\n");
- 
-				}else  {
-					write(c_socket, fail, strlen(fail));
-					printf("\n");
-				}  
-		}  
-//		else if(!strncasecmp(rcvBuffer, "readfile", 9)){
-//			int ni=0;
-//			token = strtok(rcvBuffer, " ");
-//			while(token != NULL){
-//				str[ni++] = token;
-//				token = strtok(NULL, " ");
-//			}
-			//str[0] = readfile
-                        //str[1] = filename
-//			if(ni<2)
-//				sprintf(buffer,"readfile 기능을 사용하기 위해서는 readfile <파일명> 형태로 입력하시오.");
-//			FILE *fp = fopen(str[1], "r");
-//			if(fp){
-//				char tempStr[100];
-//				memset(buffer, 0,100);
-//				while(fgets(tempStr,100,(FILE *)fp)){
-//					strcat(buffer, tempStr);
-//				}
-//				fclose(fp);	
-//			}else{
-//				sprintf(buffer,"파일이 없습니다");
-//			     }
-//			}
-		n = strlen(buffer);
-		write(c_socket, buffer, n);
-		}
-		close(c_socket);
-		if(!strncasecmp(rcvBuffer, "kill server", 11))
-		break;
-	}	
+	pthread_mutex_destroy(&mutex);
 	close(s_socket);
 }
 
-
+void *do_service(void *argv){
+    int   n;
+    int rcvLen;
+    char buffer[BUFSIZE] = "Hi, I'm server\n";
+    char rcvBuffer[BUFSIZE];
+    int c_socket = *((int *)argv);
+    while(1){
+   		 char *token;
+       		 char *str[3];
+     	         int i = 0;
+    		 rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
+    		 rcvBuffer[rcvLen] = '\0';
+	         printf("[%s] received\n", rcvBuffer);
+              	if(strncasecmp(rcvBuffer, "quit", 4) == 0 || strncasecmp(rcvBuffer, "kill server", 11) == 0)
+            		break;
+		if(!strncmp(rcvBuffer, "안녕하세요", strlen("안녕하세요")))
+            		strcpy(buffer, "안녕하세요. 만나서 반가워요.");
+        	else if(!strncmp(rcvBuffer, "이름이 머야?", strlen("이름이 머야?")))
+            		strcpy(buffer, "내 이름은 박종경이야");
+        	else if(!strncmp(rcvBuffer, "몇 살이야?", strlen("몇 살이야?")))
+           	 	strcpy(buffer, "나는 20살이야.");
+        	else if(!strncasecmp(rcvBuffer, "strlen ", 7) & strlen(rcvBuffer) > 7)
+         	        sprintf(buffer, "문자열의 길이는 %d입니다.", strlen(rcvBuffer) -7 );
+       		 else if(!strncasecmp(rcvBuffer, "strcmp ", 7)){
+            		i = 0;
+            		token = strtok(rcvBuffer, " ");
+            		while(token != NULL){
+                		str[i++] = token;
+             			token = strtok(NULL, " ");
+            		}		
+			 if(i < 3)
+               			 sprintf(buffer, "문자열 비교를 위해서는 두 문자열이 필요합니다.");
+            		else if(!strcmp(str[1], str[2])) // 문자열이 같다면,
+                		sprintf(buffer, "%s와 %s는 같은 문자열입니다.", str[1], str[2]);
+            		else
+                		sprintf(buffer, "%s와 %s는 다른 문자열입니다.", str[1], str[2]);
+       }else if(!strncasecmp(rcvBuffer, "readfile ", 9)){
+       		  i = 0;
+                  token = strtok(rcvBuffer, " ");
+         	   //str[0] = readfile
+                   //str[1] = 파일명
+                  while(token != NULL){
+               		   str[i++] = token;
+               	 	   token = strtok(NULL, " ");
+       		   }
+        	    if(i<2)
+                	 sprintf(buffer, "readfile 기능을 사용하기 위해서는 readfile <파일명> 형태로 입력하시오.");
+                    printf("%s\n", str[1]);
+                    FILE *fp = fopen(str[1], "r");
+                    if(fp){
+				char tempStr[BUFSIZE];
+				memset(buffer, 0, BUFSIZE);
+				while(fgets(tempStr, BUFSIZE, (FILE *)fp)){
+					strcat(buffer, tempStr);
+				}
+				fclose(fp);
+		    }else{
+				sprintf(buffer, "파일이 없습니다.");
+		    }
+	}else if(!strncasecmp(rcvBuffer, "exec ", 5)){
+			char *command;	
+			token = strtok(rcvBuffer, " ");
+			command = strtok(NULL, "\0");
+			printf("command: %s\n", command);
+			int result = system(command);
+			printf("result: %d\n", result);
+			if(result){
+				sprintf(buffer, "[%s] 명령어가 실패하였습니다.", command);
+			}else{
+				sprintf(buffer, "[%s] 명령어가 성공적으로 수행되었습니다.", command);
+			}
+ 		}else
+			strcpy(buffer, "무슨 말인지 모르겠습니다.");
+		n = strlen(buffer);
+		write(c_socket, buffer, n);
+		}
+	pthread_mutex_lock(&mutex);
+	numClient--;
+	pthread_mutex_unlock(&mutex);
+	printf("현재 %d개의 클라이언트가 접속 중입니다.\n", numClient);
+}
 
