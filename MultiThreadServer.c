@@ -11,16 +11,16 @@
  
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
-void* do_service(void *);
+void* do_service(void * argv);
 int main( )
 {
 	int   c_socket, s_socket;
 	struct sockaddr_in s_addr, c_addr;
 	int   len;
-	int   n;
 	int sel = 0;
 	int rcvLen;
 	pthread_t pthread;
+	int status;
 	int thr_id;
 	char rcvBuffer[100];
 	char buffer[BUFSIZ] = "Server is connected";
@@ -47,23 +47,20 @@ int main( )
 		len = sizeof(c_addr);
 		c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
 		//3-3.클라이언트가 접속했을 때 "Client is connected" 출력
-		thr_id=pthread_create(&pthread,NULL,do_service,(void *)&c_socket);
-		printf("Client is connected\n");
-		n = strlen(buffer);
-		write(c_socket, buffer, n);	
-		
 	
+		printf("Client is connected\n");
+		status = pthread_create(&pthread,NULL,do_service,(void *) &c_socket);
 	}	
 	close(s_socket);
 }
-void* do_service(void * data)
+void* do_service(void * argv)
 {
  	int sel = 0,n=0;
 	int rcvLen;
 	char rcvBuffer[100];
 	char buffer[BUFSIZ] = "Server is connected";
 	char *bf1,*bf2;
-	int c_socket=*((int*)data);
+	int c_socket= *((int *)argv);
 	while(1){
 		sel=0;
 		rcvLen = read(c_socket, rcvBuffer, sizeof(rcvBuffer));
