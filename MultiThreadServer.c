@@ -62,6 +62,7 @@ int main(){
 		printf("Client is connected\n");
 		printf("현재 %d개의 클라이언트가 접속 하였습니다.\n", concli);
 	}
+	pthread_mutex_destroy(&mutex);
 	close(s_socket);
 }
 
@@ -179,7 +180,8 @@ void *do_service(void *data){
 			break;
 		}
 	}
-
+	concli--;
+	printf("1개의 클라이언트가 종료되어 현재 %d개가 접속 되어 있습니다.\n", concli);
 	close(c_socket);
 
 	if(!strncasecmp(rcvBuffer, "kill server", 11)){
