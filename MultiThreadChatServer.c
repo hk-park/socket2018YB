@@ -71,14 +71,18 @@ void *do_chat(void *arg)
 	char chatData[CHATDATA];
 	char tempData[CHATDATA];
 	char *w_user;
+	char *message;
 	char sender[MAX_NAME];
 	int i, n;
+	char *nicknm;
+	char sendmessage[MAX_NAME];
 	while(1) {
 		memset(chatData, 0, sizeof(chatData));
 		if((n=read(c_socket,chatData,sizeof(chatData)))>0){
 		strcpy(tempData,chatData);
-		w_user = strtok(tempData,"/");
-		w_user = strtok(NULL,"/");
+		nicknm = strtok(tempData,"/");
+		w_user = strtok(NULL,"/w ");
+		message = strtok(NULL,"/");		
 		for(i=0;i<MAX_CLIENT;i++){
 			if(list_user[i].user_socket==c_socket)
 			strcpy(sender,list_user[i].user_name);
@@ -87,8 +91,9 @@ void *do_chat(void *arg)
 		
 		for(i=0;i<MAX_CLIENT;i++){
 			if(list_user[i].user_socket != INVALID_SOCK&&w_user!=NULL&&!strcmp(list_user[i].user_name,w_user)){
+				sprintf(sendmessage,"%s %s",nicknm,message);
 				printf("whisper, from %s to %s.\n",sender,w_user);
-				write(list_user[i].user_socket,chatData,n);
+				write(list_user[i].user_socket,sendmessage,n);
 			}else if(list_user[i].user_socket != INVALID_SOCK&&w_user==NULL){
 				write(list_user[i].user_socket,chatData,n);
 			}
