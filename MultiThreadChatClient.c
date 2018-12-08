@@ -30,14 +30,17 @@ int main(int argc, char *argv[ ])
     c_addr.sin_addr.s_addr = inet_addr(IPADDR);
     c_addr.sin_family = AF_INET;
     c_addr.sin_port = htons(PORT);
+	printf("닉네임에 빈칸을 넣지 말아주세요\n");
     printf("Input Nickname : ");
     scanf("%s", nickname);
     if(connect(c_socket, (struct sockaddr *) &c_addr, sizeof(c_addr)) == -1) {
         printf("Can not connect\n");
-	 	close(c_socket);
+	 	 close(c_socket);
         return -1;
     }
 	//	printf("쓰레드 생성 중\n");
+
+		write(c_socket,nickname,strlen(nickname));  //닉네임 등록을 위해 먼저 전송
 		pthread_create(&thread_1, NULL, do_send_chat,(void *)&c_socket);		
 		pthread_create(&thread_2, NULL, do_receive_chat,(void *)&c_socket);		
 		pthread_join(thread_1, (void**)&nfds);
@@ -56,6 +59,8 @@ void * do_send_chat(void *arg)
     int n; 
     int c_socket = *((int *) arg);        // client socket
 	//	printf("do_send_chat 진입 검사\n");
+	printf("일반 채팅은 '전송할 메시지'엔터 하면 되고\n");
+	printf("귓속말은 '/w 유저닉네임 전송메시지' 엔터 로 하시면 됩니다.\n");	//유저 닉네임에 빈칸이 없다면
     while(1) {
         memset(buf, 0, sizeof(buf));
         if((n = read(0, buf, sizeof(buf))) > 0 ) { //키보드에서 입력 받은 문자열을 buf에 저장. read()함수의 첫번째 인자는 file descriptor로써, 0은 stdin, 즉 키보드를 의미함.
@@ -78,7 +83,7 @@ void *do_receive_chat(void *arg)
         memset(chatData, 0, sizeof(chatData));
         if((n = read(c_socket, chatData, sizeof(chatData))) > 0 ) {
             write(1, chatData, n); //chatData를 화면에 출력함 (1 = stdout (모니터))
-			printf("\n");
+		//	printf("\n");
         }
     }
 }

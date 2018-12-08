@@ -13,12 +13,19 @@ int checkClient(); //클라이언트 인원수 측정
 pthread_t thread;
 pthread_mutex_t mutex;
 #define MAX_CLIENT 10
+#define MAX_NAME 20
 #define CHATDATA 1024
 #define INVALID_SOCK -1
 #define PORT 9000
-int    list_c[MAX_CLIENT]; //접속한 클라이언트를 관리하는 배열
+struct user{
+		int c_socket;
+		char user_name[MAX_NAME];
+};
+
+struct user list_c[MAX_CLIENT]; //접속한 클라이언트를 관리하는 배열
+
 char    escape[ ] = "exit";
-char    greeting[ ] = "Welcome to chatting room";
+char    greeting[ ] = "Welcome to chatting room\n";
 char    CODE200[ ] = "Sorry No More Connection\n";
 int numOfClient =0;
 int main(int argc, char *argv[ ])
@@ -28,7 +35,7 @@ int main(int argc, char *argv[ ])
     int    len;
     int    i, j, n;
     int    res;
-	pthread_t pthread;	//하던대로...
+//	pthread_t pthread;	//하던대로...
     if(pthread_mutex_init(&mutex, NULL) != 0) {
         printf("Can not create mutex\n");
         return -1;
@@ -47,7 +54,7 @@ int main(int argc, char *argv[ ])
         return -1;
     }
     for(i = 0; i < MAX_CLIENT; i++)
-        list_c[i] = INVALID_SOCK;
+        list_c[i].c_socket = INVALID_SOCK;
     while(1) {
         len = sizeof(c_addr);
         c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
@@ -58,7 +65,7 @@ int main(int argc, char *argv[ ])
         } else {	
 			numOfClient = res;
 			//정상적으로 접속했을 경우
-			printf("현재 접속자수: %d\n",checkClient()); //넘오브 클라이언트의 값은 이미 더해져있음
+		//	printf("현재 접속자수: %d\n",checkClient()); //넘오브 클라이언트의 값은 이미 더해져있음
            write(c_socket, greeting, strlen(greeting));
 			pthread_mutex_lock(&mutex);
 		  	pthread_create(&thread, NULL, do_chat,(void *)&c_socket);
@@ -71,22 +78,36 @@ int main(int argc, char *argv[ ])
 void *do_chat(void *arg)
 {
     int c_socket = *((int *)arg);
-    char chatData[CHATDATA];
+    char chatData[CHATDATA], tempData[CHATDATA];
+	char checkUser[MAX_NAME];
+	char *whisper_user, *message, *nickName;
     int i, n;
     while(1) {
-        memset(chatData, 0, sizeof(chatData));
+		char whisperData[CHATDATA];
+        memset(whisperData, 0, sizeof(whisperData));
+        memset(chatData, 0, sizeof(chatData));	
+        memset(tempData, 0, sizeof(tempData));	
         if((n = read(c_socket, chatData, sizeof(chatData))) > 0) {
-		 //	chatData[n-1]='\n'; //개행문자 부분을 끝 으로 바꿔줌 
-			chatData[n-1]='\0'; //개행문자 부분을 끝 으로 바꿔줌 
-			pthread_mutex_lock(&mutex);
-			for(i=0;i<MAX_CLIENT;i++){
-				if(list_c[i] != INVALID_SOCK){
-					write(list_c[i], chatData, strlen(chatData));	
+			chatData[n]='\0'; 
+			strcpy(tempData,chatData); //귓속말 검사용 데이터복사	
+		nickName = strtok(tempData," ");  // "/w "를 잘라버리고 
+			whisper_user = strtok(NULL,"/w "); 		
+			message = strtok(NULL,"\0");	//메시지를		
+		sprintf(whisperData,"%s %s",nickName, message);		
+			 for(i=0; i<MAX_CLIENT;i++){
+					if(list_c[i].c_socket == c_socket)	//소켓이 일치하면, 이름을 보낼 유저(checkUser)에 등록
+					strcpy(checkUser,list_c[i].user_name);
+			}
+			for(i = 0; i < MAX_CLIENT; i++){
+				if(list_c[i].c_socket != INVALID_SOCK){
+					if(message != NULL && !strcmp(list_c[i].user_name,whisper_user)){
+							write(list_c[i].c_socket,whisperData,n);  //귓속말 보내기
+					}
+					else if(message == NULL){
+							write(list_c[i].c_socket,chatData,n);  //일반 보내기
+					}
 				}
 			}
-			pthread_mutex_unlock(&mutex);
-			//클라이언트에게  내용 보냄	. 위에서 처리한 후 buffer에 strlen(buffer)의 크기만큼 넣은 내용물을 c_socket에 담아 보낸다. 
-
             //write chatData to all clients
             if(strstr(chatData, escape) != NULL) {
                 popClient(c_socket);			
@@ -96,29 +117,38 @@ void *do_chat(void *arg)
     }
 }
 int pushClient(int c_socket) {
-    //ADD c_socket to list_c array.
-	int i=0;
-	int flag = 1;
-	for(i; i<MAX_CLIENT; i++){
-	if(list_c[i] == INVALID_SOCK){
-		list_c[i] = c_socket;	
-		flag = 0;
-		break;	
-		}		
+	
+	int i,n;
+	char user_name[MAX_NAME];
+	
+	memset(user_name, 0 ,sizeof(user_name));	
+     //ADD c_socket to list_c array.
+     
+		for(i = 0; i<MAX_CLIENT; i++){
+		pthread_mutex_lock(&mutex);
+		if(list_c[i].c_socket == INVALID_SOCK){
+			list_c[i].c_socket = c_socket;
+			if((n = read(c_socket,user_name,sizeof(user_name))) > 0){
+					strcpy(list_c[i].user_name,user_name);
+			}
+			printf("%d번 소켓에 닉네임%s등록\n", list_c[i].c_socket,list_c[i].user_name);
+			pthread_mutex_unlock(&mutex);
+			return i;
+		}
+		pthread_mutex_unlock(&mutex);
 	}
-	if(flag)
+		
+	if (i == MAX_CLIENT)
 		return -1;
-	else
-		return i+1;
-    //return -1, if list_c is full.
-    //return the index of list_c which c_socket is added.	
+     //return -1, if list_c is full.
+     //return the index of list_c which c_socket is added.
 }
 int popClient(int c_socket)
 {
     	int i=0;
 		for(i; i<MAX_CLIENT; i++){
-			if(list_c[i] == c_socket)
-				list_c[i]= INVALID_SOCK;
+			if(list_c[i].c_socket == c_socket)
+				list_c[i].c_socket = INVALID_SOCK;
 				break;		
 		}
 		numOfClient--;
@@ -129,7 +159,7 @@ int checkClient(){
 	int i=0;
 	int n=10;
 	for(i; i<MAX_CLIENT; i++){
-			if(list_c[i] == INVALID_SOCK)
+			if(list_c[i].c_socket == INVALID_SOCK)
 			n--;
 	}
 	return n;
