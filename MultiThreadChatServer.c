@@ -14,7 +14,12 @@ pthread_mutex_t mutex;
 #define CHATDATA 1024
 #define INVALID_SOCK -1
 #define PORT 9000
-int    list_c[MAX_CLIENT]; //접속한 클라이언트를 관리하는 배열
+struct user{
+		int c_socket;
+		char c_name[20];
+}; //접속한 클라이언트를 관리하는 구조체
+struct user list_c[MAX_CLIENT];
+
 char    escape[ ] = "exit";
 char    greeting[ ] = "Welcome to chatting room\n";
 char    CODE200[ ] = "Sorry No More Connection\n";
@@ -43,7 +48,7 @@ int main(int argc, char *argv[ ])
         return -1;
     }
     for(i = 0; i < MAX_CLIENT; i++)
-        list_c[i] = INVALID_SOCK;
+        list_c[i].c_socket = INVALID_SOCK;
     while(1) {
         len = sizeof(c_addr);
         c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
@@ -53,7 +58,7 @@ int main(int argc, char *argv[ ])
             close(c_socket);
         } else {
             write(c_socket, greeting, strlen(greeting));
-            //pthread_create with do_chat function.
+			pthread_create(&thread, NULL, do_chat, (void*)&c_socket);
         }
     }
 }
@@ -62,30 +67,69 @@ void *do_chat(void *arg)
     int c_socket = *((int *)arg);
     char chatData[CHATDATA];
     int i, n;
+	char *ptr, *ptrSender, *ptrReceiver;
     while(1) {
         memset(chatData, 0, sizeof(chatData));
         if((n = read(c_socket, chatData, sizeof(chatData))) > 0) {
-            //write chatData to all clients
-            //
-            ///////////////////////////////
-            if(strstr(chatData, escape) != NULL) {
-                popClient(c_socket);
-                break;
-            }
-        }
-    }
+			ptr=strstr(chatData, "/w");// /w이 위치한 포인터 저장
+			if(ptr!=NULL){ // chatData에 /w포인터가 존재할경우 (채팅 내용에 /w이 존재할경우)
+				ptr = strtok(chatData, " "); // 토큰내용 : "[보낸사람 닉네임]"
+				ptrSender = ptr;
+				ptr = strtok(NULL, " "); // 토큰내용 : "/w"
+				ptr = strtok(NULL, " ");  // 토큰내용 : "받는사람 닉네임"
+				ptrReceiver = ptr;
+				ptr = strtok(NULL, "\n"); // 토큰내용 : "메시지"
+				for(i=0; i<MAX_CLIENT; i++){
+					if(!strcmp(list_c[i].c_name, ptrReceiver)){ //받는사람 닉네임 토큰과 구조체의 유저 닉네임이 일치할경우
+						sprintf(chatData, "%s(귓) %s\n\0", ptrSender, ptr);
+						write(list_c[i].c_socket, chatData, strlen(chatData)); //귓속말 보내기
+						continue;
+					}
+				} //닫힘 for(i=0; i<MAX_CLIENT; i++)
+			}else{
+				for(i=0; i<MAX_CLIENT; i++){
+					if(list_c[i].c_socket != INVALID_SOCK && list_c[i].c_socket!=c_socket)//메세지 보낸사람에게는 메세지를 재전달하지 않도록 수정
+						write(list_c[i].c_socket, chatData, n);
+				}
+				if(strstr(chatData, escape) != NULL) {
+					popClient(c_socket);
+					break;
+				}
+			} //닫힘 else
+        }  //닫힘 if((n = read(c_socket, chatData, sizeof(chatData))) > 0)
+    } //닫힘 while(1)
 }
 int pushClient(int c_socket) {
-    //ADD c_socket to list_c array.
-    //
-    ///////////////////////////////
-    //return -1, if list_c is full.
-    //return the index of list_c which c_socket is added.
+	int i;
+	char nameData[CHATDATA];
+	for(i=0; i<MAX_CLIENT; i++){
+		if(list_c[i].c_socket == INVALID_SOCK){
+			pthread_mutex_lock(&mutex);
+			list_c[i].c_socket = c_socket;
+			pthread_mutex_unlock(&mutex);
+			memset(nameData, 0, sizeof(nameData));
+			if(read(list_c[i].c_socket,nameData,sizeof(nameData)) > 0){ //클라이언트로부터 닉네임 입력받음
+				pthread_mutex_lock(&mutex);
+				strcpy(list_c[i].c_name, nameData); //입력받은 닉네임을 구조체의 유저 닉네임에 저장 
+				pthread_mutex_unlock(&mutex);
+			}
+			return i;
+		}
+	}
+	if(i == MAX_CLIENT)
+		return -1;
 }
 int popClient(int c_socket)
 {
-    close(c_socket);
-    //REMOVE c_socket from list_c array.
-    //
-    ///////////////////////////////////
+	int i;
+	close(c_socket);
+	for(i=0; i<MAX_CLIENT; i++){
+		if(c_socket == list_c[i].c_socket){
+			pthread_mutex_lock(&mutex);
+			list_c[i].c_socket = INVALID_SOCK;
+			pthread_mutex_unlock(&mutex);
+			break;
+		}
+	}
+	return 0;	
 }
