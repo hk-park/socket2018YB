@@ -82,39 +82,55 @@ void *do_chat(void *arg)
 	char checkUser[MAX_NAME];
 	char *whisper_user, *message, *nickName;
     int i, n;
-    while(1) {
+    while(1) 
+	{
 		char whisperData[CHATDATA];
-        memset(whisperData, 0, sizeof(whisperData));
-        memset(chatData, 0, sizeof(chatData));	
-        memset(tempData, 0, sizeof(tempData));	
-        if((n = read(c_socket, chatData, sizeof(chatData))) > 0) {
+       memset(whisperData, 0, sizeof(whisperData));
+       memset(chatData, 0, sizeof(chatData));	
+       memset(tempData, 0, sizeof(tempData));	
+       if((n = read(c_socket, chatData, sizeof(chatData))) > 0) 
+		{
 			chatData[n]='\0'; 
-			strcpy(tempData,chatData); //귓속말 검사용 데이터복사	
-		nickName = strtok(tempData," ");  // "/w "를 잘라버리고 
-			whisper_user = strtok(NULL,"/w "); 		
-			message = strtok(NULL,"\0");	//메시지를		
-		sprintf(whisperData,"%s %s",nickName, message);		
-			 for(i=0; i<MAX_CLIENT;i++){
+			whisper_user = strstr(chatData,"/w"); //  /w 가능 검사
+			if(whisper_user != NULL)	//뭔가 있을 경우
+			{ 
+				strcpy(tempData,chatData); //귓속말 검사용 데이터복사	
+				nickName = strtok(tempData," ");  // "송신자 닉 "를 잘라버리고 
+			//	printf("송신자: %s\t", nickName);
+				whisper_user = strtok(NULL," "); 	//	수신자 닉 잘르기
+				whisper_user = strtok(NULL," "); 
+			//	printf("수신자: %s\t", whisper_user);
+				message = strtok(NULL,"\0");	//메시지를		받아내기
+			//	printf("메시지: %s\n", message);
+				sprintf(whisperData,"%s %s",nickName, message);		
+				for(i=0; i<MAX_CLIENT;i++)
+				{
 					if(list_c[i].c_socket == c_socket)	//소켓이 일치하면, 이름을 보낼 유저(checkUser)에 등록
-					strcpy(checkUser,list_c[i].user_name);
-			}
-			for(i = 0; i < MAX_CLIENT; i++){
-				if(list_c[i].c_socket != INVALID_SOCK){
-					if(message != NULL && !strcmp(list_c[i].user_name,whisper_user)){
+						strcpy(checkUser,list_c[i].user_name);
+				} //for 귓속말 유저찾기
+				for(i = 0; i < MAX_CLIENT; i++)
+				{
+					if(list_c[i].c_socket != INVALID_SOCK)
+					{
+						if(message != NULL && !strcmp(list_c[i].user_name,whisper_user))						
 							write(list_c[i].c_socket,whisperData,n);  //귓속말 보내기
-					}
-					else if(message == NULL){
-							write(list_c[i].c_socket,chatData,n);  //일반 보내기
-					}
-				}
-			}
-            //write chatData to all clients
-            if(strstr(chatData, escape) != NULL) {
-                popClient(c_socket);			
-                break;
-            }
-        }
-    }
+					}					
+				} //for 귓속말 찾고 보내기
+			} // whisper!=NULL
+			else {
+				for(i = 0; i < MAX_CLIENT; i++){
+					if(list_c[i].c_socket != INVALID_SOCK)
+						write(list_c[i].c_socket,chatData,n);  //일반 보내기	
+				} //for
+			}	//else	 귓속말이 아닐경우
+		}		
+	   //write chatData to all clients
+       if(strstr(chatData, escape) != NULL) 
+		{
+     	  popClient(c_socket);			
+     	  break;
+          	}        
+	}
 }
 int pushClient(int c_socket) {
 	
