@@ -66,21 +66,34 @@ void *do_chat(void *arg)
     int c_socket = *((int *)arg);
     char chatData[CHATDATA];
     int i, n;
+    char *wis_check, *message, *cname;
     while(1) {
         memset(chatData, 0, sizeof(chatData));
         if((n = read(c_socket, chatData, sizeof(chatData))) > 0) {
+		cname = strtok(chatData," ");
+		wis_check = strtok(NULL, "/w ");
+		message = strtok(NULL, " ");
 		for(i=0; i<MAX_CLIENT; i++){
-			if(user[i].list_c != INVALID_SOCK){
-				write(user[i].list_c, chatData, n);
+			if(strcmp(user[i].list_cname, wis_check) == 0){
+				write(user[i].list_c, message, sizeof(message));
+				break;
 			}
-		}
+			else if(message == NULL){
+				for(i=0; i<MAX_CLIENT; i++){
+					if(user[i].list_c != INVALID_SOCK){
+					write(user[i].list_c, chatData, n);
+					}
+				}
+			}
+		}	
+	}
 		if(strstr(chatData, escape) != NULL) {
                 popClient(c_socket);
                 break;
 		}
-        }
     }
 }
+
 int pushClient(int c_socket) {
 	int i, n;
 	char cname[CHATDATA];
@@ -90,10 +103,10 @@ int pushClient(int c_socket) {
 		pthread_mutex_lock(&mutex);
 		if(user[i].list_c == INVALID_SOCK){
 			user[i].list_c = c_socket;
-			//if((n=read(c_socket, cname, sizeof(cname)))>0){
-			//	strcpy(user[i].list_cname, cname);
-			//}
-			//printf("%d %s\n",user[i].list_c, user[i].list_cname);
+			if(read(c_socket, cname, sizeof(cname))>0){
+				strcpy(user[i].list_cname, cname);
+			}
+			printf("%d %s\n",user[i].list_c, user[i].list_cname);
 			pthread_mutex_unlock(&mutex);
 			return i;
 		}
