@@ -14,7 +14,11 @@ pthread_mutex_t mutex;
 #define CHATDATA 1024
 #define INVALID_SOCK -1
 #define PORT 9000
-int    list_c[MAX_CLIENT]; //접속한 클라이언트를 관리하는 배열
+struct u{
+	int    list_c; //접속한 클라이언트를 관리하는 배열
+	char   list_cname[CHATDATA];
+};
+struct u user[MAX_CLIENT];
 char    escape[ ] = "exit";
 char    greeting[ ] = "Welcome to chatting room\n";
 char    CODE200[ ] = "Sorry No More Connection\n";
@@ -43,7 +47,7 @@ int main(int argc, char *argv[ ])
         return -1;
     }
     for(i = 0; i < MAX_CLIENT; i++)
-        list_c[i] = INVALID_SOCK;
+        user[i].list_c = INVALID_SOCK;
     while(1) {
         len = sizeof(c_addr);
         c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
@@ -66,8 +70,9 @@ void *do_chat(void *arg)
         memset(chatData, 0, sizeof(chatData));
         if((n = read(c_socket, chatData, sizeof(chatData))) > 0) {
 		for(i=0; i<MAX_CLIENT; i++){
-			if(list_c[i] != INVALID_SOCK)
-				write(list_c[i], chatData, n);
+			if(user[i].list_c != INVALID_SOCK){
+				write(user[i].list_c, chatData, n);
+			}
 		}
 		if(strstr(chatData, escape) != NULL) {
                 popClient(c_socket);
@@ -77,12 +82,18 @@ void *do_chat(void *arg)
     }
 }
 int pushClient(int c_socket) {
-	int i;
-
+	int i, n;
+	char cname[CHATDATA];
+	
+	memset(cname, 0, sizeof(cname));
 	for(i=0; i<MAX_CLIENT; i++){
 		pthread_mutex_lock(&mutex);
-		if(list_c[i] == INVALID_SOCK){
-			list_c[i] = c_socket;
+		if(user[i].list_c == INVALID_SOCK){
+			user[i].list_c = c_socket;
+			//if((n=read(c_socket, cname, sizeof(cname)))>0){
+			//	strcpy(user[i].list_cname, cname);
+			//}
+			//printf("%d %s\n",user[i].list_c, user[i].list_cname);
 			pthread_mutex_unlock(&mutex);
 			return i;
 		}
@@ -97,8 +108,8 @@ int popClient(int c_socket)
 	close(c_socket);
 	for(i=0; i<MAX_CLIENT; i++){
 		pthread_mutex_lock(&mutex);
-		if(c_socket == list_c[i]){
-			list_c[i] = INVALID_SOCK;
+		if(c_socket == user[i].list_c){
+			user[i].list_c = INVALID_SOCK;
 			pthread_mutex_unlock(&mutex);
 			break;
 		}
