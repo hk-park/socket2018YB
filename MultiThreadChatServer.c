@@ -15,10 +15,10 @@ pthread_mutex_t mutex;
 #define INVALID_SOCK -1
 #define PORT 9000
 struct u{
-	int    list_c; //접속한 클라이언트를 관리하는 배열
+	int    list_c; //접속한 클라이언트를 관리하는 배열 / 유저 구조체 생성
 	char   list_cname[CHATDATA];
 };
-struct u user[MAX_CLIENT];
+struct u user[MAX_CLIENT]; // 구조체를 클라이언트의 최대 수 만큼 생성함:
 char    escape[ ] = "exit";
 char    greeting[ ] = "Welcome to chatting room\n";
 char    CODE200[ ] = "Sorry No More Connection\n";
