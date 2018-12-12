@@ -24,7 +24,7 @@ int main(int argc, char *argv[]){
     int c_socket;
     struct sockaddr_in c_addr;
     //int len; //어디에 쓰는 지 않보인다.
-    //char chatData[CHATDATA]; //어디에 쓰는 지 않보인다.
+    char chatData[CHATDATA];
     //char buf[CHATDATA]; //어디에 쓰는 지 않보인다.
     //int nfds;//어디에 쓰일 것 같음
     //fd_set read_fds;//어디에 쓰일 것 같음
@@ -45,6 +45,7 @@ int main(int argc, char *argv[]){
         printf("Can not connect\n");
         return -1;
     }
+	write(c_socket, nickname, strlen(nickname));/*별명 보내기 서버에다*/
 	thr_id = pthread_create(&thread_1, NULL, do_send_chat, (void *)&c_socket);
 	thr_id = pthread_create(&thread_2, NULL, do_receive_chat, (void *)&c_socket);
 	pthread_join(thread_1, (void **)&status);
@@ -63,7 +64,9 @@ void *do_send_chat(void *arg)
     while(1) {
         memset(buf, 0, sizeof(buf));
         if((n = read(0, buf, sizeof(buf))) > 0 ) { //키보드에서 입력 받은 문자열을 buf에 저장. read()함수의 첫번째 인자는 file descriptor로써, 0은 stdin, 즉 키보드를 의미함.
-            sprintf(chatData, "[%s] %s", nickname, buf);
+			sprintf(chatData, "[%s] ", nickname);
+			write(c_socket, chatData, strlen(chatData));
+            sprintf(chatData, "%s", buf);
             write(c_socket, chatData, strlen(chatData)); //서버로 채팅 메시지 전달
             if(!strncmp(buf, escape, strlen(escape))) { //'exit' 메세지를 입력하면,
                 pthread_kill(thread_2, SIGINT); //do_receive_chat 스레드를 종료시킴
@@ -74,9 +77,9 @@ void *do_send_chat(void *arg)
 }
 void *do_receive_chat(void *arg)
 {
-    char    chatData[CHATDATA];
-    int    n;
-    int    c_socket = *((int *)arg);        // client socket
+    char chatData[CHATDATA];
+    int n;
+    int c_socket = *((int *)arg);        // client socket
     while(1) {
         memset(chatData, 0, sizeof(chatData));
         if((n = read(c_socket, chatData, sizeof(chatData))) > 0 ) {
