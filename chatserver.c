@@ -69,7 +69,7 @@ main( )
 		pthread_join(pthread,(void **) &status);
 	//	printf("Client is connected\n");
 		printf("현재 %d개의 클라이언트가 접속하였습니다.\n", ++servercount);
-		qsort(accsocket,servercount,sizeof(int),compare);
+		qsort(accsocket,servercount,sizeof(USER),compare);
 		
 /*
 		n = strlen(buffer);
@@ -250,8 +250,9 @@ void sig_handler(int signo)
 	}
 }
 */
-int compare(int a,int b){
-	if(a<b) return -1;
-	else if(a>b) return 1;
-	else return 0;
+int compare(const void *A,const void *B){
+	CARD *ptrA = (CARD*)A; 
+	CARD *ptrB = (CARD*)B; 
+
+	return strcmp(ptrA->id,ptrB->id);
 }
