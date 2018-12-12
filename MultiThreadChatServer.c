@@ -93,7 +93,9 @@ void *do_chat(void *arg)
           else if(strncmp(chatData,"/r ",strlen("/r "))==0){
             strtok(chatData," ");
             char* token = strtok(NULL," ");
+            pthread_mutex_lock(&mutex);
             list[client_index].room=token[0]-48;
+            pthread_mutex_unlock(&mutex);
             sprintf(sendData,"[SYSTEM] %d번방에 입장했씁니다.\n",list[client_index].room);
             write(list[client_index].c_socket,sendData,strlen(sendData));
           }
@@ -144,11 +146,15 @@ int searchClinet(int c_socket){
 
 int pushClient(int c_socket) {
 	int i=0;
+  int status=0;
 	for(i=0; i< MAX_CLIENT; i++){
-		if(list[i].c_socket==INVALID_SOCK) {
-			list[i].c_socket=c_socket;
-			return i;
-		}
+    pthread_mutex_lock(&mutex);
+    if(list[i].c_socket==INVALID_SOCK) {
+      list[i].c_socket=c_socket;
+      status=1;
+    }
+    pthread_mutex_unlock(&mutex);
+    if (status==1) return i;
 	}
 	return -1;
 }
@@ -156,8 +162,10 @@ int popClient(int c_socket) {
 	int i=0;
 	for(i=0; i<MAX_CLIENT; i++){
 		if(list[i].c_socket==c_socket){
+      pthread_mutex_lock(&mutex);
 			close(c_socket);
 			list[i].c_socket=INVALID_SOCK;
+      pthread_mutex_unlock(&mutex);
 			return i;
 		}
 	}
