@@ -76,37 +76,40 @@ void *do_chat(void *arg)
 {
     int c_socket = *((int *)arg);
     char chatData[CHATDATA];
+    char tempData[CHATDATA];
     int i, n;
-    char *cName, *msg, *rName;
-    char *name;
+    char *msg, *rec, *whi, *send;
     while(1) {
         memset(chatData, 0, sizeof(chatData));
         if((n = read(c_socket, chatData, sizeof(chatData))) > 0) {
 		//write chatData to all clients
-		cName = strtok(chatData, " ");
-		rName = strtok(NULL, "/w ");
-		msg = strtok(NULL, " ");
+		strcpy(tempData, chatData);
+		msg = strstr(tempData, "/w");
 		
-		for(i=0; i<MAX_CLIENT; i++) {
-			if(!strcmp(us[i].cName, rName)) {
-				sprintf(chatData, "[%s] %s", us[i].cName, msg);
-				write(us[i].list, chatData, strlen(chatData));
-				break;
+		if(msg == NULL) {
+			for(i=0; i<MAX_CLIENT; i++) {
+				if(us[i].list != INVALID_SOCK && us[i].list != c_socket)
+					write(us[i].list, chatData, n);
 			}
-			else if(msg == NULL) {
-				for(i=0; i<MAX_CLIENT; i++) {
-					if(us[i].list != INVALID_SOCK)
-						write(us[i].list, chatData, n);
+			if(strstr(chatData, escape) != NULL) {
+                		popClient(c_socket);
+                		break;
+			}
+		}
+		else {
+			rec = strtok(chatData, " ");
+			whi = strtok(NULL, "/w ");
+			send = strtok(NULL, " ");
+			for(i=0; i<MAX_CLIENT; i++) {
+				if(!strcmp(us[i].cName, whi)) {
+					write(us[i].list, chatData, strlen(chatData));
+					write(us[i].list, send, strlen(send));
 				}
 			}
 		}
-
-		if(strstr(chatData, escape) != NULL) {
-                	popClient(c_socket);
-                	break;
-            	}
-        }
+           }
     }
+
 }
 
 int pushClient(int c_socket) {
@@ -122,7 +125,7 @@ int pushClient(int c_socket) {
 		us[i].list = c_socket;
 		if(read(c_socket, cName, sizeof(cName))>0)
 			strcpy(us[i].cName, cName);
-		printf("%d %s\n", us[i].list, us[i].cName);
+		//printf("%d %s\n", us[i].list, us[i].cName);
 		pthread_mutex_unlock(&mutex);
 		return i;
 	}
