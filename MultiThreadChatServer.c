@@ -1,3 +1,7 @@
+/*
+[추가 할것]
+클라이언트가 나갈때 나갔다는 메시지 출력으로 바꾸기
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +15,9 @@ int pushClient(int); //새로운 클라이언트가 접속했을 때 클라이�
 int popClient(int); //클라이언트가 종료했을 때 클라이언트 정보 삭제
 
 pthread_t thread;
-pthread_mutex_t mutex, mutex2 = PTHREAD_MUTEX_INITIALIZER;
+//pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
+//init을 할 때 넣어줌 init을 않하면 ^^^^^^^^ 값을 넣어준다
+pthread_mutex_t mutex2;
 
 #define MAX_CLIENT 10
 #define CHATDATA 1024
@@ -32,7 +38,8 @@ int main(int argc, char *argv[])
     int len;
     int i, j, n;
     int res;
-    if(pthread_mutex_init(&mutex, NULL) != 0) {
+	/*mutex를 사용하기 위해선 attr값을 넣어 주어야 한다. 위에서 미리 넣으면 한해도 되나 이것은 에러 처리를 위함*/
+    if(pthread_mutex_init(&mutex2, NULL) != 0) {
         printf("Can not create mutex\n");
         return -1;
     }
@@ -49,8 +56,7 @@ int main(int argc, char *argv[])
         printf("listen Fail\n");
         return -1;
     }
-    for(i = 0; i < MAX_CLIENT; i++)
-        list_c[i] = INVALID_SOCK;
+	memset(list_c, INVALID_SOCK, sizeof(list_c));//'-1'값은 클라이언트가 없는 뜻이다.
     while(1) {
         len = sizeof(c_addr);
         c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
@@ -60,7 +66,8 @@ int main(int argc, char *argv[])
             close(c_socket);
         } else {
            write(c_socket, greeting, strlen(greeting));
-			thr_id = pthread_create(&thread, NULL, do_chat, (void *)&list-c[client_count -1]);
+			/*배열 위치가 1에 위치하는 데 1에는 값이 없다.*/
+			thr_id = pthread_create(&thread, NULL, do_chat, (void *)&list_c[client_count -1]);
            //pthread_create with do_chat function.
         }
     }
@@ -72,16 +79,16 @@ void *do_chat(void *arg){
     while(1) {
 		memset(chatData, 0, sizeof(chatData));
        if((n = read(c_socket, chatData, sizeof(chatData))) > 0) {
-			//client_count가 최대일때 i는 9까지 올라간다.
+			//client_count가 최대일때 i는 9까지 올라간다. 0~9의 개수는 10이다.
 			for(i = 0; i < client_count; i++){
-				//문제 발생시 주석 해제
-				//pthread_mutex_lock(&mutex2);
+				//문제 발생 안될시 mutex 봉인
+				pthread_mutex_lock(&mutex2);
 				write(list_c[i], chatData, strlen(chatData));
-				//pthread_mutex_unlock(&mutex2);
+				pthread_mutex_unlock(&mutex2);
 			}
             //write chatData to all clients
-            //
-            ///////////////////////////////
+			/*클라이언트가 exit를 보내면은 실행이된다.*/
+			/*배열의 위치가 1인데 1에는 값이 없다.*/
             if(strstr(chatData, escape) != NULL) {
                 popClient(list_c[client_count-1]);
                 break;
@@ -111,7 +118,7 @@ int pushClient(int c_socket) {
 }
 int popClient(int c_socket){
 	close(c_socket);
-	list_c[client_count -1] = INVALID_SOCK;
+	list_c[client_count -1] = INVALID_SOCK;/*그 배열의 위치에다가 -1값을 넣어준다.*/
 	//1명 나감
 	pthread_mutex_lock(&mutex2);
 	client_count--;
