@@ -14,7 +14,7 @@ void *do_send_chat(void *);
 void *do_receive_chat(void *);
 pthread_t thread_1, thread_2;
 char    escape[ ] = "exit";
-char    nickname[20];
+char   *nickname;
 int    room;
 int main(int argc, char *argv[ ])
 {
@@ -44,8 +44,8 @@ int main(int argc, char *argv[ ])
     	scanf("%d", &room);
       sprintf(chatData, "/r %d", room);
       write(c_socket, chatData, strlen(chatData));
-       pthread_create(&thread_1, NULL, do_send_chat,(void *)&c_socket);
-      pthread_create(&thread_2, NULL, do_receive_chat, (void *)&c_socket);
+      pthread_create(&thread_1, NULL, do_send_chat,(void *)&c_socket);
+     pthread_create(&thread_2, NULL, do_receive_chat, (void *)&c_socket);
     	pthread_join(thread_1, NULL);
     	pthread_join(thread_2, NULL);
 	//pthread_join both threads

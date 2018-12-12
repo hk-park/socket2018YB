@@ -10,21 +10,21 @@ int pushClient(int); //새로운 클라이언트가 접속했을 때 클라이�
 int popClient(int); //클라이언트가 종료했을 때 클라이언트 정보 삭제
 pthread_t thread;
 pthread_mutex_t mutex;
-#define MAX_CLIENT 10
+#define MAX_CLIENT 20
 #define CHATDATA 1024
 #define INVALID_SOCK -1
 #define PORT 9000
 
-struct list{ //접속한 클라이언트를 관리하는 배열
+struct chatlist{ //접속한 클라이언트를 관리하는 배열
   int c_socket;
   char nickname[30];
   int room;
-}list[MAX_CLIENT];
+}chatlist[MAX_CLIENT];
 
-int	client_num = -1;
-char    escape[ ] = "exit";
-char    greeting[ ] = "Welcome to chatting room\n";
-char    CODE200[ ] = "Sorry No More Connection\n";
+int		client_num = -1;
+char    *escape = "exit";
+char    *greeting = "Welcome to chatting room\n";
+char    *CODE200 = "Sorry No More Connection\n";
 int main(int argc, char *argv[ ])
 {
     int c_socket, s_socket;
@@ -50,7 +50,7 @@ int main(int argc, char *argv[ ])
         return -1;
     }
     for(i = 0; i < MAX_CLIENT; i++)
-        list[i].c_socket = INVALID_SOCK;
+        chatlist[i].c_socket = INVALID_SOCK;
     while(1) {
         len = sizeof(c_addr);
         c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
@@ -77,36 +77,36 @@ void *do_chat(void *arg)
 
           client_index = searchClinet(c_socket);
           memset(sendData, 0, sizeof(sendData));
-          sprintf(sendData,"[%s] %s",list[client_index].nickname,chatData);
+          sprintf(sendData,"[%s] %s",chatlist[client_index].nickname,chatData);
 
           if(strncmp(chatData,"/n",strlen("/n"))==0){
             strtok(chatData," ");
             char* token = strtok(NULL," ");
-            strcpy(list[client_index].nickname,token);
+            strcpy(chatlist[client_index].nickname,token);
           }
           else if(strncmp(chatData,"/r",strlen("/r"))==0){
             strtok(chatData," ");
             char* token = strtok(NULL," ");
-            list[client_index].room=token[0]-48;
-            sprintf(sendData,"[SYSTEM] %d번방에 입장했씁니다.",list[client_index].room);
-            write(list[client_index].c_socket,sendData,strlen(sendData));
+            chatlist[client_index].room=token[0]-48;
+            sprintf(sendData,"[SYSTEM] %d번방에 입장했씁니다.",chatlist[client_index].room);
+            write(chatlist[client_index].c_socket,sendData,strlen(sendData));
           }
 
           else if(strncmp(chatData,"/w",strlen("/n"))==0){
             strtok(chatData," ");
             char* nickname = strtok(NULL," ");
             char* chat = strtok(NULL,"\n");
-            sprintf(sendData,"[%s님의 귓속말] %s",list[client_index].nickname,chat);
+            sprintf(sendData,"[%s님의 귓속말] %s",chatlist[client_index].nickname,chat);
             for(i=0; i<MAX_CLIENT; i++){
-              if(list[i].c_socket!=INVALID_SOCK && strcmp(list[i].nickname,nickname)==0){
-                write(list[i].c_socket,sendData,strlen(sendData));
+              if(chatlist[i].c_socket!=INVALID_SOCK && strcmp(chatlist[i].nickname,nickname)==0){
+                write(chatlist[i].c_socket,sendData,strlen(sendData));
               }
             }
           }
           else{
             for(i=0; i<MAX_CLIENT; i++){
-          		if(list[i].c_socket!=INVALID_SOCK && i!=client_index && list[client_index].room==list[i].room){
-          			write(list[i].c_socket,sendData,strlen(sendData));
+          		if(chatlist[i].c_socket!=INVALID_SOCK && i!=client_index && chatlist[client_index].room==chatlist[i].room){
+          			write(chatlist[i].c_socket,sendData,strlen(sendData));
               }
         	  }
           }
@@ -121,7 +121,7 @@ void *do_chat(void *arg)
 int searchClinet(int c_socket){
   int i, result=-1;
   for(i=0; i<MAX_CLIENT; i++){
-    if(list[i].c_socket==c_socket) result = i;
+    if(chatlist[i].c_socket==c_socket) result = i;
   }
   return result;
 }
@@ -129,8 +129,8 @@ int searchClinet(int c_socket){
 int pushClient(int c_socket) {
 	int i=0;
 	for(i=0; i< MAX_CLIENT; i++){
-		if(list[i].c_socket==INVALID_SOCK) {
-			list[i].c_socket=c_socket;
+		if(chatlist[i].c_socket==INVALID_SOCK) {
+			chatlist[i].c_socket=c_socket;
 			return i;
 		}
 	}
@@ -139,9 +139,9 @@ int pushClient(int c_socket) {
 int popClient(int c_socket) {
 	int i=0;
 	for(i=0; i<MAX_CLIENT; i++){
-		if(list[i].c_socket==c_socket){
+		if(chatlist[i].c_socket==c_socket){
 			close(c_socket);
-			list[i].c_socket=INVALID_SOCK;
+			chatlist[i].c_socket=INVALID_SOCK;
 			return i;
 		}
 	}
