@@ -18,6 +18,12 @@ pthread_mutex_t mutex;
 #define INVALID_SOCK -1
 #define PORT 9000
 
+struct list {
+	int c_socket;
+	char nickname[30];
+	uint8_t room;
+} list[MAX_CLIENT];
+
 int    list_c[MAX_CLIENT]; //접속한 클라이언트를 관리하는 배열
 char    escape[ ] = "exit";
 char    greeting[ ] = "Welcome to chatting room\n";
@@ -70,24 +76,102 @@ int main(int argc, char *argv[ ]) {
 void *do_chat(void *arg) {
     int c_socket = *((int *)arg);
     char chatData[CHATDATA];
-    int i, n;
+    char sendData[CHATDATA];
+
+    int i;
+    int n;
+    int client_index = -1;
 
     while(1) {
         memset(chatData, 0, sizeof(chatData));
 
         if((n = read(c_socket, chatData, sizeof(chatData))) > 0) {
-            if(strstr(chatData, escape) != NULL) {
-                popClient(c_socket);
+		client_index = searchClient(c_socket);
+	  	memset(sendData, 0, sizeof(sendData));
+	        sprintf(sendData,"[%s] %s",list[client_index].nickname,chatData);
+	}
+
+        else if(strncmp(chatData,"/n ",strlen("/n "))==0){
+		strtok(chatData," ");
+    		char* token = strtok(NULL," ");
+        	strcpy(list[client_index].nickname,token);
+        }
+
+        else if(strncmp(chatData,"/r ",strlen("/r "))==0){
+ 	       strtok(chatData," ");
+    		char* token = strtok(NULL," ");
+   		list[client_index].room=token[0]-48;
+        	sprintf(sendData,"[SYSTEM]Accept %d th room.\n",list[client_index].room);
+        	write(list[client_index].c_socket,sendData,strlen(sendData));
+        }
+
+        else if(strncmp(chatData,"/list",strlen("/list"))==0){
+        	memset(sendData, 0, sizeof(sendData));
+        	for(i=0; i<MAX_CLIENT; i++){
+          		if(list[i].c_socket!=INVALID_SOCK && list[client_index].room==list[i].room){
+               			sprintf(sendData,"%s\n",list[i].nickname);
+              			write(list[client_index].c_socket,sendData,strlen(sendData));
+            		}
+          	}
+        }
+
+        else if(strncmp(chatData,"/w ",strlen("/w "))==0){
+        	strtok(chatData," ");
+        	char* nickname = strtok(NULL," ");
+        	char* chat = strtok(NULL,"\n");
+        	sprintf(sendData,"[%s`s whisper] %s",list[client_index].nickname,chat);
+            
+		for(i=0; i<MAX_CLIENT; i++){
+              		if(list[i].c_socket!=INVALID_SOCK && strcmp(list[i].nickname,nickname)==0 && list[client_index].room==list[i].room){
+                	write(list[i].c_socket,sendData,strlen(sendData));
+              		}
+        	}
+        }
+
+          else {
+            	for(i=0; i<MAX_CLIENT; i++){
+          		if(list[i].c_socket!=INVALID_SOCK && i!=client_index && list[client_index].room==list[i].room){
+          			write(list[i].c_socket,sendData,strlen(sendData));
+              		}
+        	}
+	}
+
+          if(strstr(chatData, escape) != NULL) {
+          	popClient(c_socket);
                 break;
-            }
+          }
         }
     }
+
+int searchClient(int c_socket) {
+	int i;
+	int rst = -1;
+
+	for(i = 0; i < MAX_CLIENT; i++)
+		if(list[i].c_socket == c_socket)
+			rst = i;
+	return rst;
 }
 
 int pushClient(int c_socket) {
-
+	int i=0;
+	for(i=0; i< MAX_CLIENT; i++){
+		if(list[i].c_socket==INVALID_SOCK) {
+			list[i].c_socket=c_socket;
+			return i;
+		}
+	}
+	return -1;
 }
 int popClient(int c_socket) {
-
-    close(c_socket);
+	int i = 0;
+	
+	for(i = 0; i < MAX_CLIENT; i++) {
+		if(list[i].c_socket == c_socket) {
+			close(c_socket);
+			list[i].c_socket = INVALID_SOCK;
+			return -1;
+		}
+	}
+  	return -1;
 }
