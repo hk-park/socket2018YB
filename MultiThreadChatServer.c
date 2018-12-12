@@ -1,4 +1,4 @@
-nclude <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -9,16 +9,25 @@ nclude <stdio.h>
 void *do_chat(void *); 
 int pushClient(int); 
 int popClient(int); 
+
 pthread_t thread;
 pthread_mutex_t mutex;
-#define MAX_CLIENT 10
+
+#define MAX_CLIENT 20
 #define CHATDATA 1024
 #define INVALID_SOCK -1
 #define PORT 9000
-int    list_c[MAX_CLIENT]; 
-char    escape[ ] = "exit";
-char    greeting[ ] = "Welcome to chatting room\n";
-char    CODE200[ ] = "Sorry No More Connection\n";
+
+struct chatlist{ 
+  int c_socket;
+  char nickname[30];
+  int room;
+}chatlist[MAX_CLIENT];
+
+int		client_num = -1;
+char    *escape = "exit";
+char    *greeting = "Welcome to chatting room\n";
+char    *CODE200 = "Sorry No More Connection\n";
 int main(int argc, char *argv[ ])
 {
     int c_socket, s_socket;
@@ -44,16 +53,17 @@ int main(int argc, char *argv[ ])
         return -1;
     }
     for(i = 0; i < MAX_CLIENT; i++)
-        list_c[i] = INVALID_SOCK;
+        chatlist[i].c_socket = INVALID_SOCK;
     while(1) {
         len = sizeof(c_addr);
         c_socket = accept(s_socket, (struct sockaddr *) &c_addr, &len);
-        res = pushClient(c_socket); 
+	      res = pushClient(c_socket); 
         if(res < 0) { 
             write(c_socket, CODE200, strlen(CODE200));
             close(c_socket);
         } else {
             write(c_socket, greeting, strlen(greeting));
+            int status = pthread_create(&thread,NULL,do_chat,(void *)&c_socket);
         }
     }
 }
@@ -61,39 +71,81 @@ void *do_chat(void *arg)
 {
     int c_socket = *((int *)arg);
     char chatData[CHATDATA];
-    int i, n;
+    char sendData[CHATDATA];
+    int i, n, client_index=-1;
     while(1) {
         memset(chatData, 0, sizeof(chatData));
         if((n = read(c_socket, chatData, sizeof(chatData))) > 0) {
-    void *do_chat(void *arg)
-{
-    int c_socket = *((int *)arg);
-    char chatData[CHATDATA];
-    int i, n;
-    while(1) {
-        memset(chatData, 0, sizeof(chatData));
-        if((n = read(c_socket, chatData, sizeof(chatData))) > 0) {
-	 //write chatData to all clients
-         //
-         ///////////////////////////////
-        if(strstr(chatData, escape) != NULL) {
-                popClient(c_socket);
-                break;
+
+          client_index = searchClinet(c_socket);
+          memset(sendData, 0, sizeof(sendData));
+          sprintf(sendData,"[%s] %s",chatlist[client_index].nickname,chatData);
+
+          if(strncmp(chatData,"/n",strlen("/n"))==0){
+            strtok(chatData," ");
+            char* token = strtok(NULL," ");
+            strcpy(chatlist[client_index].nickname,token);
+          }
+          else if(strncmp(chatData,"/r",strlen("/r"))==0){
+            strtok(chatData," ");
+            char* token = strtok(NULL," ");
+            chatlist[client_index].room=token[0]-48;
+            sprintf(sendData,"[SYSTEM] %d번방에 입장했씁니다.",chatlist[client_index].room);
+            write(chatlist[client_index].c_socket,sendData,strlen(sendData));
+          }
+
+          else if(strncmp(chatData,"/w",strlen("/n"))==0){
+            strtok(chatData," ");
+            char* nickname = strtok(NULL," ");
+            char* chat = strtok(NULL,"\n");
+            sprintf(sendData,"[%s님의 귓속말] %s",chatlist[client_index].nickname,chat);
+            for(i=0; i<MAX_CLIENT; i++){
+              if(chatlist[i].c_socket!=INVALID_SOCK && strcmp(chatlist[i].nickname,nickname)==0){
+                write(chatlist[i].c_socket,sendData,strlen(sendData));
+              }
             }
+          }
+          else{
+            for(i=0; i<MAX_CLIENT; i++){
+          		if(chatlist[i].c_socket!=INVALID_SOCK && i!=client_index && chatlist[client_index].room==chatlist[i].room){
+          			write(chatlist[i].c_socket,sendData,strlen(sendData));
+              }
+        	  }
+          }
+
+          if(strstr(chatData, escape) != NULL) {
+              popClient(c_socket);
+              break;
+          }
         }
     }
 }
+int searchClinet(int c_socket){
+  int i, result=-1;
+  for(i=0; i<MAX_CLIENT; i++){
+    if(chatlist[i].c_socket==c_socket) result = i;
+  }
+  return result;
+}
+
 int pushClient(int c_socket) {
-    //ADD c_socket to list_c array.
-    //
-    ///////////////////////////////
-    //return -1, if list_c is full.
-    //return the index of list_c which c_socket is added.
-    }
-int popClient(int c_socket)
-{
-    close(c_socket);
-     //REMOVE c_socket from list_c array.
-     //
-     ///////////////////////////////////
+	int i=0;
+	for(i=0; i< MAX_CLIENT; i++){
+		if(chatlist[i].c_socket==INVALID_SOCK) {
+			chatlist[i].c_socket=c_socket;
+			return i;
+		}
+	}
+	return -1;
+}
+int popClient(int c_socket) {
+	int i=0;
+	for(i=0; i<MAX_CLIENT; i++){
+		if(chatlist[i].c_socket==c_socket){
+			close(c_socket);
+			chatlist[i].c_socket=INVALID_SOCK;
+			return i;
+		}
+	}
+  return -1;
 }
