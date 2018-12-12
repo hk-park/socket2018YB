@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 // 2-1. 서버 프로그램이 사용하는 포트를 9000 --> 10000으로 수정 
 #define PORT 9000
@@ -13,11 +14,18 @@
  
 // 2-2. 클라이언트가 접속했을 때 보내는 메세지를 변경하려면 buffer을 수정
 //char buffer[100] = "hello, world\n";
+typedef struct user{
+	int socket;
+	char id[30];
+} USER;
+
 void *do_service(void *data);
 void sig_handler();
 int servercount=0;
-int accsocket[100];
+USER accsocket[100]={0,};
 
+
+int compare(int a,int b);
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 main( )
 {
@@ -61,6 +69,7 @@ main( )
 		pthread_join(pthread,(void **) &status);
 	//	printf("Client is connected\n");
 		printf("현재 %d개의 클라이언트가 접속하였습니다.\n", ++servercount);
+		qsort(accsocket,servercount,sizeof(int),compare);
 		
 /*
 		n = strlen(buffer);
@@ -91,15 +100,19 @@ void *chat_service(void *data){
 
 		}
 		else if(strcmp(rcvBuffer,"kill server") == 0){
-
+			for(int i=0; accsocket[i].socket!=NULL; i++){
+				write(accsocket[i].socket,rcvBuffer,rcvLen);
+			}
+			close(c_socket);
+			close(s_socket);
+			exit(0);
 		}
 		else if(strncmp(rcvBuffer,"/w",strlen("/w")) == 0){
-			
+				
 		}
-		else{
-			for(int i=0; accsocket[i]!=NULL; i++){
-
-
+		else{			
+			for(int i=0; accsocket[i].socket!=NULL; i++){
+				write(accsocket[i].socket,rcvBuffer,rcvLen);
 			}
 		}
 	}
@@ -237,4 +250,8 @@ void sig_handler(int signo)
 	}
 }
 */
-
+int compare(int a,int b){
+	if(a<b) return -1;
+	else if(a>b) return 1;
+	else return 0;
+}
