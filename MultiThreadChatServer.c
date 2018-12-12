@@ -18,11 +18,12 @@ pthread_mutex_t mutex;
 struct list{ //접속한 클라이언트를 관리하는 배열
   int c_socket;
   char nickname[30];
-  int room;
+  uint8_t room;
 }list[MAX_CLIENT];
 
 int	client_num = -1;
 char    escape[ ] = "exit";
+char    helpMsg[ ] ="/n <닉네임> : 닉에임 변경\n/w <닉네임> : 귓속말 보내기\n/list : 현재방 채팅 인원 출력\n/r <방번호> : 채팅방 이동\n/h 도움말 메세지 출력\n";
 char    greeting[ ] = "Welcome to chatting room\n";
 char    CODE200[ ] = "Sorry No More Connection\n";
 int main(int argc, char *argv[ ])
@@ -79,26 +80,41 @@ void *do_chat(void *arg)
           memset(sendData, 0, sizeof(sendData));
           sprintf(sendData,"[%s] %s",list[client_index].nickname,chatData);
 
-          if(strncmp(chatData,"/n",strlen("/n"))==0){
+          if(strncmp(chatData,"/h",strlen("/h"))==0){
+            write(list[client_index].c_socket,helpMsg,strlen(helpMsg));
+          }
+
+          else if(strncmp(chatData,"/n ",strlen("/n "))==0){
             strtok(chatData," ");
             char* token = strtok(NULL," ");
             strcpy(list[client_index].nickname,token);
           }
-          else if(strncmp(chatData,"/r",strlen("/r"))==0){
+
+          else if(strncmp(chatData,"/r ",strlen("/r "))==0){
             strtok(chatData," ");
             char* token = strtok(NULL," ");
             list[client_index].room=token[0]-48;
-            sprintf(sendData,"[SYSTEM] %d번방에 입장했씁니다.",list[client_index].room);
+            sprintf(sendData,"[SYSTEM] %d번방에 입장했씁니다.\n",list[client_index].room);
             write(list[client_index].c_socket,sendData,strlen(sendData));
           }
 
-          else if(strncmp(chatData,"/w",strlen("/n"))==0){
+          else if(strncmp(chatData,"/list",strlen("/list"))==0){
+            memset(sendData, 0, sizeof(sendData));
+            for(i=0; i<MAX_CLIENT; i++){
+              if(list[i].c_socket!=INVALID_SOCK && list[client_index].room==list[i].room){
+                sprintf(sendData,"%s\n",list[i].nickname);
+                write(list[client_index].c_socket,sendData,strlen(sendData));
+              }
+            }
+          }
+
+          else if(strncmp(chatData,"/w ",strlen("/w "))==0){
             strtok(chatData," ");
             char* nickname = strtok(NULL," ");
             char* chat = strtok(NULL,"\n");
             sprintf(sendData,"[%s님의 귓속말] %s",list[client_index].nickname,chat);
             for(i=0; i<MAX_CLIENT; i++){
-              if(list[i].c_socket!=INVALID_SOCK && strcmp(list[i].nickname,nickname)==0){
+              if(list[i].c_socket!=INVALID_SOCK && strcmp(list[i].nickname,nickname)==0 && list[client_index].room==list[i].room){
                 write(list[i].c_socket,sendData,strlen(sendData));
               }
             }

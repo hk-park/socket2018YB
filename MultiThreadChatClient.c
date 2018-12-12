@@ -15,7 +15,7 @@ void *do_receive_chat(void *);
 pthread_t thread_1, thread_2;
 char    escape[ ] = "exit";
 char    nickname[20];
-int    room;
+uint8_t    room;
 int main(int argc, char *argv[ ])
 {
     int c_socket;
@@ -24,7 +24,7 @@ int main(int argc, char *argv[ ])
     char chatData[CHATDATA];
     char buf[CHATDATA];
     int nfds;
-	int status;
+	  int status;
     fd_set read_fds;
     int n;
     c_socket = socket(PF_INET, SOCK_STREAM, 0);
@@ -41,7 +41,7 @@ int main(int argc, char *argv[ ])
       sprintf(chatData, "/n %s", nickname);
       write(c_socket, chatData, strlen(chatData));
 
-      printf("select room[1~9] : ");
+      printf("select room[0~9] : ");
     	scanf("%d", &room);
       sprintf(chatData, "/r %d", room);
       write(c_socket, chatData, strlen(chatData));
